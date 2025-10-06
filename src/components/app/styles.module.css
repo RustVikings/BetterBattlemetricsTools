@@ -1,0 +1,7 @@
+.options_container {
+    @apply flex;
+    @apply flex-col;
+    @apply gap-4;
+    @apply items-center;
+    @apply text-base;
+}

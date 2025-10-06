@@ -1,0 +1,49 @@
+.options_form {
+    @apply max-w-xl;
+    @apply p-10;
+    @apply bg-slate-800;
+    @apply rounded-lg;
+
+    h1 {
+        @apply text-2xl;
+        @apply font-bold;
+        @apply mb-6;
+    }
+
+    form {
+        @apply w-96;
+
+        input {
+            @apply w-full;
+            @apply px-2;
+            @apply py-1;
+            @apply border;
+            @apply border-gray-300;
+            @apply rounded;
+            @apply mb-4;
+            @apply rounded-md;
+            @apply border-2;
+            @apply text-slate-900;
+            @apply flex-shrink-0;
+        }
+        .button {
+            @apply bg-slate-700;
+            @apply text-white;
+            @apply px-4;
+            @apply py-2;
+            @apply rounded;
+            @apply hover:bg-slate-500;
+            @apply transition;
+            @apply duration-150;
+            @apply ease-in-out;
+            @apply disabled:opacity-50;
+            @apply disabled:cursor-not-allowed;
+            @apply border-0;
+        }
+        fieldset {
+            legend {
+                @apply font-bold;
+            }
+        }
+    }
+}

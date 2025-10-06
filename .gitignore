@@ -1,5 +1,4 @@
-dist/js/*
-storybook-static/*
+dist/*
 
 /node_modules
 npm-debug.log

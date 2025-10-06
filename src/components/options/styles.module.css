@@ -1,0 +1,127 @@
+.options_form {
+    @apply max-w-xl;
+    @apply p-10;
+    @apply bg-slate-800;
+    @apply rounded-lg;
+
+    h1 {
+        @apply text-2xl;
+        @apply font-bold;
+        @apply mb-6;
+    }
+
+    form {
+        @apply w-96;
+
+        input {
+            @apply w-full;
+            @apply px-2;
+            @apply py-1;
+            @apply border;
+            @apply border-gray-300;
+            @apply rounded;
+            @apply mb-4;
+            @apply rounded-md;
+            @apply border-2;
+            @apply text-slate-900;
+            @apply flex-shrink-0;
+        }
+        .button {
+            @apply bg-slate-700;
+            @apply text-white;
+            @apply px-4;
+            @apply py-2;
+            @apply rounded;
+            @apply hover:bg-slate-500;
+            @apply transition;
+            @apply duration-150;
+            @apply ease-in-out;
+            @apply disabled:opacity-50;
+            @apply disabled:cursor-not-allowed;
+            @apply border-0;
+        }
+        fieldset {
+            @apply mb-5;
+            @apply border-b;
+            @apply border-b-slate-900;
+            & + fieldset {
+                @apply p-0;
+                @apply mb-0;
+                @apply border-0;
+            }
+            legend {
+                @apply font-bold;
+            }
+
+            .test {
+                @apply bg-pink-500;
+            }
+
+            .form_component {
+                @apply mb-3;
+                &.switch {
+                    @apply flex;
+                    @apply flex-row;
+                    @apply items-center;
+                    @apply justify-between;
+                    @apply mb-3;
+                }
+
+                .permissions {
+                    @apply text-xs;
+                }
+
+                label {
+                    @apply mb-2;
+                    @apply inline-block;
+                    @apply hover:cursor-pointer;
+                }
+
+                input {
+                    @apply mb-2;
+                    @apply font-mono;
+                }
+
+                .error_message {
+                    @apply text-red-600;
+                    @apply text-sm;
+                    @apply font-medium;
+                    @apply block;
+                    @apply opacity-0;
+                    @apply max-h-max;
+                    @apply h-0;
+                    @apply transition-all;
+                    @apply hidden;
+                }
+
+                &.error_state {
+                    label {
+                        @apply text-red-600;
+                    }
+                    .error_message {
+                        @apply max-h-max;
+                        @apply h-auto;
+                        @apply opacity-100;
+                        @apply block;
+                    }
+                    input {
+                        @apply bg-red-100;
+                        @apply border-2;
+                        @apply border-red-600;
+                        @apply focus:outline-red-600;
+                        @apply transition-colors;
+                    }
+                }
+            }
+        }
+
+        button {
+            @apply py-2 px-4;
+            @apply bg-green-600;
+            @apply rounded-md;
+            @apply hover:bg-green-700;
+            @apply transition-colors;
+            @apply w-full;
+        }
+    }
+}

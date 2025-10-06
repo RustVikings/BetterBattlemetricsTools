@@ -3,5 +3,15 @@
 @tailwind utilities;
 
 body {
-    @apply bg-gray-200;
+    @apply bg-slate-900;
+    @apply text-white;
+    @apply m-10;
+}
+
+#options_container {
+    @apply flex;
+    @apply flex-col;
+    @apply gap-4;
+    @apply items-center;
+    @apply text-base;
 }
