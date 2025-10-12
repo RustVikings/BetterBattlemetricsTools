@@ -2,7 +2,7 @@ import React, { JSX } from "react";
 
 export function Spinner(): JSX.Element {
     return (
-        <div role="status">
+        <div role="status" className="flex flex-row justify-center mb-5">
             <svg
                 aria-hidden="true"
                 className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
@@ -19,7 +19,7 @@ export function Spinner(): JSX.Element {
                     fill="currentFill"
                 />
             </svg>
-            <span className="sr-only">Saving...</span>
+            <span className="sr-only">Loading...</span>
         </div>
     );
 }

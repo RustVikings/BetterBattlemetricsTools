@@ -19,4 +19,9 @@ body {
         @apply hover:text-blue-300 underline;
         @apply transition-colors;
     }
+
+    /* dont apply underline to battlemetrics buttons ("Ban Player" | "Public Profile") */
+    li.css-gx0a6d a {
+        @apply no-underline;
+    }
 }

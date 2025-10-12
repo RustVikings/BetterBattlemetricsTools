@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Better Battlemetrics Tools",
-    "description": "Needs a proper description",
-    "version": "1.0.0",
+    "description": "This extension changes the layout of the \"Player profile\" page and enhances the presented information.",
+    "version": "0.1.0",
     "action": {
         "default_icon": {
             "16": "icons/icon_16.png",

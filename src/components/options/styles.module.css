@@ -1,7 +1,7 @@
 .options_form {
     @apply max-w-2xl;
     @apply w-full;
-    @apply p-8;
+    @apply p-6;
     @apply bg-slate-800;
     @apply rounded-lg;
 
@@ -43,15 +43,17 @@
         }
         fieldset {
             @apply pb-2;
-            @apply mb-5;
+            @apply mb-2;
             @apply border-b;
             @apply border-b-slate-900;
             &.last {
-                @apply border-0;
+                @apply border-b-0;
+                @apply mb-1;
             }
             legend {
                 @apply font-bold;
-                @apply mb-3;
+                @apply mb-2;
+                @apply pt-2;
             }
 
             .test {
@@ -77,6 +79,12 @@
                     @apply mr-3;
                     @apply inline-block;
                     @apply hover:cursor-pointer;
+
+                    .required {
+                        @apply text-white;
+                        @apply mr-1;
+                        @apply text-xs;
+                    }
                 }
 
                 input {

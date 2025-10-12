@@ -8,6 +8,7 @@ interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputIsValid: boolean | undefined;
     label: string;
     permissions?: string;
+    required: boolean;
 }
 
 export function TextInput(props: TextInputProps): JSX.Element {
@@ -23,6 +24,11 @@ export function TextInput(props: TextInputProps): JSX.Element {
         >
             <label htmlFor={props.name}>
                 {props.label + " "}
+                {props.required ? (
+                    <span className={css.required}>(required)</span>
+                ) : (
+                    ""
+                )}
                 <a href={props?.href} target="_blank" rel="noopener noreferrer">
                     <img
                         className="siz"

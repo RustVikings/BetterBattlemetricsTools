@@ -3,9 +3,9 @@ import { onGetServers } from "./messaging/battlemetrics/getServers";
 import { getMyServers } from "./apis/battlemetrics/getUserServers";
 
 Browser.runtime.onInstalled.addListener(() => {
+    console.log("Extention loaded: Better Battlemetrics Tools");
     let SETTINGS;
 
-    console.log("SETTINGS");
     if (!SETTINGS) {
         Browser.runtime.openOptionsPage();
     } else {
@@ -24,6 +24,9 @@ onGetServers(async (sendResponse: CallableFunction, battlemetrics) => {
             }))
             .then((res) => {
                 serverList = res;
+            })
+            .catch(() => {
+                return false;
             }),
     );
     return sendResponse({

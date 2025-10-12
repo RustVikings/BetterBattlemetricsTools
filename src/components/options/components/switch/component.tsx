@@ -38,7 +38,7 @@ export function Switch(props: SwitchProps): React.JSX.Element {
                 <input
                     type="checkbox"
                     className="sr-only peer"
-                    id={props?.name}
+                    id={props?.id}
                     name={props?.name}
                     onChange={props.onChange}
                     checked={props.checked}
