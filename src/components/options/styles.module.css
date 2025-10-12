@@ -1,6 +1,7 @@
 .options_form {
-    @apply max-w-xl;
-    @apply p-10;
+    @apply max-w-2xl;
+    @apply w-full;
+    @apply p-8;
     @apply bg-slate-800;
     @apply rounded-lg;
 
@@ -11,9 +12,9 @@
     }
 
     form {
-        @apply w-96;
+        @apply w-full;
 
-        input {
+        input[type="text"] {
             @apply w-full;
             @apply px-2;
             @apply py-1;
@@ -41,16 +42,16 @@
             @apply border-0;
         }
         fieldset {
+            @apply pb-2;
             @apply mb-5;
             @apply border-b;
             @apply border-b-slate-900;
-            & + fieldset {
-                @apply p-0;
-                @apply mb-0;
+            &.last {
                 @apply border-0;
             }
             legend {
                 @apply font-bold;
+                @apply mb-3;
             }
 
             .test {
@@ -64,7 +65,7 @@
                     @apply flex-row;
                     @apply items-center;
                     @apply justify-between;
-                    @apply mb-3;
+                    @apply mb-1;
                 }
 
                 .permissions {
@@ -73,6 +74,7 @@
 
                 label {
                     @apply mb-2;
+                    @apply mr-3;
                     @apply inline-block;
                     @apply hover:cursor-pointer;
                 }
@@ -122,6 +124,10 @@
             @apply hover:bg-green-700;
             @apply transition-colors;
             @apply w-full;
+            &:disabled {
+                @apply bg-gray-500;
+                @apply hover:bg-gray-500 hover:cursor-not-allowed;
+            }
         }
     }
 }

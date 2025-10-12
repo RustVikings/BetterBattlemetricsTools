@@ -1,11 +1,11 @@
-import React, { ChangeEvent, InputHTMLAttributes } from "react";
+import React, { JSX, InputHTMLAttributes } from "react";
 import classNames from "classnames";
 import css from "../../styles.module.css";
 
 interface SwitchProps extends InputHTMLAttributes<HTMLInputElement> {
-    href: string;
+    href?: string;
     label: string;
-    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    showLink: boolean;
 }
 
 export function Switch(props: SwitchProps): React.JSX.Element {
@@ -13,7 +13,16 @@ export function Switch(props: SwitchProps): React.JSX.Element {
         <div className={classNames([css.form_component, css.switch])}>
             <label className={css.switch_label} htmlFor={props?.name}>
                 {props.label + " "}
-                <a href={props?.href} target="_blank" rel="noopener noreferrer">
+                <a
+                    href={props?.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={
+                        props.showLink
+                            ? { display: "inline" }
+                            : { display: "none" }
+                    }
+                >
                     <img
                         className="siz"
                         src="./icons/link.svg"

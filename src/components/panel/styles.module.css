@@ -1,0 +1,24 @@
+.box {
+    @apply p-4;
+    @apply my-8;
+    @apply bg-slate-800;
+    h1 {
+        @apply text-2xl;
+        @apply text-white;
+    }
+    .player {
+        @apply col-span-10;
+        .avatar {
+            @apply border-white;
+            @apply border;
+            @apply rounded-lg;
+            @apply inline-block;
+            @apply overflow-clip;
+        }
+
+        h1 {
+            @apply text-base;
+            @apply font-bold;
+        }
+    }
+}

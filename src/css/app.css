@@ -3,15 +3,20 @@
 @tailwind utilities;
 
 body {
-    @apply bg-slate-900;
-    @apply text-white;
-    @apply m-10;
-}
+    font-size: 14px;
 
-#options_container {
-    @apply flex;
-    @apply flex-col;
-    @apply gap-4;
-    @apply items-center;
-    @apply text-base;
+    h1 {
+        font-size: 3.5rem;
+    }
+
+    h2 {
+        font-size: 3rem;
+        @apply my-8;
+    }
+
+    a {
+        @apply text-blue-500;
+        @apply hover:text-blue-300 underline;
+        @apply transition-colors;
+    }
 }

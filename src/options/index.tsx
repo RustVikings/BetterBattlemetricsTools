@@ -1,12 +1,11 @@
-import Browser from "webextension-polyfill";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { App } from "../components/app";
+import waitForElement from "../utils/waitforelement";
+import "../css/options.css";
 
-Browser.runtime.onMessage.addListener(function (
-    msg: any,
-    sender,
-    sendResponse,
-) {
-    const div = document.createElement("div");
-    div.innerText = msg;
-    document.body.appendChild(div);
-    return true;
+waitForElement("#options_container", (element: Element) => {
+    const OPTIONS_CONTAINER = document.getElementById("options_container")!;
+    const ROOT = createRoot(OPTIONS_CONTAINER);
+    ROOT.render(<App />);
 });

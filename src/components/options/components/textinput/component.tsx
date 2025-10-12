@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
+import React, { JSX, InputHTMLAttributes } from "react";
 import css from "../../styles.module.css";
 import classNames from "classnames";
 
@@ -7,14 +7,12 @@ interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
     href: string;
     inputIsValid: boolean | undefined;
     label: string;
-    onBlur?: (evert: FocusEvent<HTMLInputElement>) => void;
-    onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
     permissions?: string;
 }
 
-export function TextInput(props: TextInputProps): React.JSX.Element {
-    console.log(props.name + " rendered");
-    console.log("inputIsValid: " + props.inputIsValid);
+export function TextInput(props: TextInputProps): JSX.Element {
+    // console.log(props.name + " rendered");
+    // console.log("inputIsValid: " + props.inputIsValid);
     return (
         <div
             className={
@@ -50,9 +48,7 @@ export function TextInput(props: TextInputProps): React.JSX.Element {
             <span className={css.error_message}>{props.errorMessage}</span>
             {props.permissions ? (
                 <span className={css.permissions}>{props.permissions}</span>
-            ) : (
-                ""
-            )}
+            ) : null}
         </div>
     );
 }

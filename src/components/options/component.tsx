@@ -1,156 +1,248 @@
-import React, { JSX, ChangeEvent, FocusEvent, useState } from "react";
+import React, {
+    JSX,
+    ChangeEvent,
+    FocusEvent,
+    useState,
+    useEffect,
+} from "react";
 import { TextInput } from "./components/textinput";
 import { Switch } from "./components/switch";
+import { Servers } from "./components/servers";
+// import { Spinner } from "./components/spinner";
 import css from "./styles.module.css";
+import Browser = require("webextension-polyfill");
+import { getServers } from "../../messaging/battlemetrics/getServers";
+
+/* let SETTINGS: OptionsProps;
+Browser.storage.sync.get().then((response) => {
+    SETTINGS = response;
+}); */
 
 interface OptionsProps {
-    arkanLink?: boolean;
-    battleMetricsApiToken?: string;
+    arkanLink?: boolean | undefined;
+    battlemetricsApiToken: string;
     battlemetricsApiTokenIsValid?: boolean | undefined;
-    guardianLink?: boolean;
-    rustAdminLink?: boolean;
-    rustStatsLink?: boolean;
-    serverArmourLink?: boolean;
-    steamApiKey?: string;
+    guardianLink?: boolean | undefined;
+    rustAdminLink?: boolean | undefined;
+    rustStatsLink?: boolean | undefined;
+    serverArmourLink?: boolean | undefined;
+    steamApiKey: string;
     steamApiKeyIsValid?: boolean | undefined;
+    saveEnabled?: boolean;
+    orgServers?: Record<string, unknown> | [];
 }
 
-export function Options(props: OptionsProps): JSX.Element {
-    const handleValidation = (type: string, value: string): boolean => {
+export function Options(): JSX.Element {
+    const initializeForm = (): OptionsProps => {
+        return {
+            arkanLink: true,
+            battlemetricsApiToken: "",
+            guardianLink: true,
+            rustAdminLink: true,
+            rustStatsLink: true,
+            serverArmourLink: true,
+            steamApiKey: "",
+            saveEnabled: false,
+        };
+    };
+
+    const [formData, setFormData] = useState(initializeForm);
+
+    const handleApiKeyValidation = (type: string, value: string): boolean => {
         if (type === "steamApiKey") {
             const regex = /[\dA-Z]{32}/g;
             if (value.match(regex) !== null) {
-                // console.log("STEAM OK");
                 return true;
             } else {
-                // console.log("STEAM NOT OK");
                 return false;
             }
         }
-        if (type === "battleMetricsApiToken") {
+        if (type === "battlemetricsApiToken") {
             const regex = /[\dA-Za-z._-]{240,247}/g;
             if (value.match(regex) !== null) {
-                // console.log("BM OK");
                 return true;
             } else {
-                // console.log("BM NOT OK");
                 return false;
             }
         }
         return false;
     };
 
-    /* const handleSave = (e: MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault;
-        console.log(e);
-    }; */
-
-    function initForm(): OptionsProps {
-        return {
-            arkanLink: true,
-            battleMetricsApiToken: "",
-            guardianLink: false,
-            rustAdminLink: false,
-            rustStatsLink: false,
-            serverArmourLink: false,
-            steamApiKey: "",
-        };
-    }
-
-    const [form, setForm] = useState(initForm);
+    const handleSaveButtonState = () => {
+        // console.log("save button", formData);
+        if (
+            formData.battlemetricsApiTokenIsValid === true &&
+            formData.steamApiKeyIsValid === true
+        ) {
+            return true;
+        }
+        return false;
+    };
 
     const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setForm(() => ({
-            ...form,
-            [name]: value,
-            [name + "IsValid"]: handleValidation(name, value),
-        }));
-        console.log("===== onChange =====", form);
+        const { name, value, type, checked } = e.target;
+        if (type === "text") {
+            const validationResult = handleApiKeyValidation(name, value);
+            const validationProp = name + "IsValid";
+            const saveButtonState = handleSaveButtonState();
+            setFormData(() => ({
+                ...formData,
+                [name]: value,
+                [validationProp]: validationResult,
+                saveEnabled: saveButtonState,
+            }));
+            if (formData.battlemetricsApiTokenIsValid) {
+                getMyServers();
+            }
+        } else {
+            setFormData(() => ({ ...formData, [name]: checked }));
+        }
     };
 
     const handleOnBlur = (e: FocusEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setForm(() => ({
-            ...form,
-            [name]: value,
-            [name + "IsValid"]: handleValidation(name, value),
-        }));
-        console.log("===== onBlur =====", form);
+        const { name, value, type, checked, id } = e.target;
+        if (type === "text") {
+            const validationResult = handleApiKeyValidation(name, value);
+            const validationProp = name + "IsValid";
+            const saveButtonState = handleSaveButtonState();
+            setFormData(() => ({
+                ...formData,
+                [name]: value,
+                [validationProp]: validationResult,
+                saveEnabled: saveButtonState,
+            }));
+        }
+        if (type === "checkbox") {
+            setFormData(() => ({ ...formData, [name]: checked }));
+        }
+        if (formData.battlemetricsApiTokenIsValid) {
+            getMyServers();
+        }
     };
+
+    const handleSave = () => {
+        Browser.storage.sync
+            .set({ ...formData })
+            .then(() => {
+                // console.log("save ok");
+            })
+            .catch(() => {
+                // console.log("save error");
+            });
+    };
+
+    const getMyServers = () => {
+        if (
+            formData.battlemetricsApiTokenIsValid === true &&
+            formData.battlemetricsApiToken !== ""
+        ) {
+            getServers({
+                key: formData.battlemetricsApiToken,
+            }).then((response) => {
+                setFormData({ ...formData, orgServers: response.serverList });
+            });
+        }
+        return false;
+    };
+
+    useEffect(() => {
+        console.log("useEffect", formData);
+    }, [
+        formData.battlemetricsApiToken,
+        formData.battlemetricsApiTokenIsValid,
+        formData.steamApiKey,
+        formData.steamApiKeyIsValid,
+    ]);
+
+    console.log("render", formData);
 
     return (
         <div className={css.options_form}>
-            <h1>Advanced Battlemetrics Tools</h1>
             <form>
                 <fieldset>
                     <TextInput
                         errorMessage="Please insert a valid Battlemetrics API Token"
-                        inputIsValid={
-                            form.battlemetricsApiTokenIsValid || undefined
-                        }
                         href="https://www.battlemetrics.com/developers/token"
+                        inputIsValid={
+                            formData.battlemetricsApiTokenIsValid || undefined
+                        }
                         label="Battlemetrics API Token"
-                        name="battleMetricsApiToken"
+                        name="battlemetricsApiToken"
                         onBlur={handleOnBlur}
                         onChange={handleOnChange}
                         permissions="Required permissions: Actvity Log, View, search, and list bans, View RCON information"
                         placeholder="Battlemetrics API Token"
-                        value={form.battleMetricsApiToken}
+                        value={formData.battlemetricsApiToken}
                     />
                     <TextInput
                         errorMessage="Please insert a valid Steam API Key"
-                        inputIsValid={form.steamApiKeyIsValid || undefined}
                         href="https://steamcommunity.com/dev/apikey"
+                        inputIsValid={formData.steamApiKeyIsValid || undefined}
                         label="Steam API Key"
                         name="steamApiKey"
                         onBlur={handleOnBlur}
                         onChange={handleOnChange}
                         placeholder="Steam API Key"
-                        value={form.steamApiKey}
+                        value={formData.steamApiKey}
                     />
                 </fieldset>
                 <fieldset>
+                    <legend>Links</legend>
                     <Switch
+                        showLink={true}
                         name="arkanLink"
                         label="Arkan violations"
                         onChange={handleOnChange}
                         href="https://umod.org/plugins/arkan"
-                        checked={form.arkanLink}
+                        checked={formData.arkanLink}
                     />
                     <Switch
+                        showLink={true}
                         name="guardianLink"
                         label="Guardian violations"
                         onChange={handleOnChange}
                         href="https://umod.org/plugins/guardian"
-                        checked={form.guardianLink}
+                        checked={formData.guardianLink}
                     />
                     <Switch
+                        showLink={true}
                         name="rustAdminLink"
                         label="RustAdmin shared bans"
                         onChange={handleOnChange}
                         href="https://www.rustadmin.com/"
-                        checked={form.rustAdminLink}
+                        checked={formData.rustAdminLink}
                     />
                     <Switch
+                        showLink={true}
                         name="serverArmourLink"
                         label="Server Armour"
                         onChange={handleOnChange}
                         href="https://serverarmour.com/home"
-                        checked={form.serverArmourLink}
+                        checked={formData.serverArmourLink}
                     />
                     <Switch
+                        showLink={true}
                         name="rustStatsLink"
                         label="ruststats.io"
                         onChange={handleOnChange}
                         href="https://ruststats.io/"
-                        checked={props.rustStatsLink}
+                        checked={formData.rustStatsLink}
                     />
                 </fieldset>
-                <button>Save settings</button>
+                {/* render server list when available */}
+                {formData.orgServers ? (
+                    <Servers props={formData.orgServers} />
+                ) : (
+                    ""
+                )}
+                <button
+                    type="button"
+                    disabled={!formData.saveEnabled}
+                    onClick={handleSave}
+                >
+                    {formData.saveEnabled ? "Save settings" : "Save settings"}
+                </button>
             </form>
         </div>
     );
 }
-
-export default Options;

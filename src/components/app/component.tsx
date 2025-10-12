@@ -1,8 +1,5 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useContext } from "react";
 import { Options } from "../options";
-import Browser from "webextension-polyfill";
-
-const message: string = "Yo! What's up!";
 
 /* const handleClick = async () => {
     const tabs = await Browser.tabs.query({
@@ -14,8 +11,5 @@ const message: string = "Yo! What's up!";
 }; */
 
 export function App(): React.JSX.Element {
-    return (
-        <Options />
-        // <button onClick={handleClick}>Button</button> */
-    );
+    return <Options />;
 }
