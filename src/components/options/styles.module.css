@@ -28,27 +28,38 @@
             @apply flex-shrink-0;
         }
         .button {
-            @apply bg-slate-700;
+            @apply bg-slate-800;
             @apply text-white;
             @apply px-4;
             @apply py-2;
             @apply rounded;
-            @apply hover:bg-slate-500;
+            @apply hover:bg-slate-700;
             @apply transition;
             @apply duration-150;
             @apply ease-in-out;
             @apply disabled:opacity-50;
             @apply disabled:cursor-not-allowed;
             @apply border-0;
+            &.refresh {
+                @apply w-auto;
+                @apply p-2;
+            }
         }
         fieldset {
             @apply pb-2;
             @apply mb-2;
             @apply border-b;
             @apply border-b-slate-900;
-            &.last {
+            &.server_list {
                 @apply border-b-0;
                 @apply mb-1;
+                legend {
+                    @apply w-full;
+                    @apply flex;
+                    @apply flex-row;
+                    @apply justify-between;
+                    @apply items-center;
+                }
             }
             legend {
                 @apply font-bold;
@@ -76,7 +87,7 @@
 
                 label {
                     @apply mb-2;
-                    @apply mr-3;
+
                     @apply inline-block;
                     @apply hover:cursor-pointer;
 

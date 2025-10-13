@@ -9,15 +9,9 @@ import { TextInput } from "./components/textinput";
 import { Switch } from "./components/switch";
 import { Servers } from "./components/servers";
 import { Spinner } from "./components/spinner";
-// import { Spinner } from "./components/spinner";
 import css from "./styles.module.css";
 import Browser = require("webextension-polyfill");
 import { getServers } from "../../messaging/battlemetrics/getServers";
-
-/* let SETTINGS: OptionsProps;
-Browser.storage.sync.get().then((response) => {
-    SETTINGS = response;
-}); */
 
 interface OrgServer {
     checked: boolean;
@@ -36,6 +30,8 @@ interface OptionsProps {
     steamApiKeyIsValid?: boolean;
     saveEnabled?: boolean;
     orgServers: OrgServer[];
+    refreshingServers?: boolean;
+    saveButtonText?: string;
 }
 
 export function Options(): JSX.Element {
@@ -50,6 +46,8 @@ export function Options(): JSX.Element {
             steamApiKey: "",
             saveEnabled: false,
             orgServers: [],
+            saveButtonText: "Save options",
+            refreshingServers: false,
         };
     };
 
@@ -175,7 +173,10 @@ export function Options(): JSX.Element {
                 ...options,
             })
             .then(() => {
-                console.log("save ok");
+                setFormData((prevState) => ({
+                    ...prevState,
+                    saveButtonText: "Options saved",
+                }));
             })
             .catch(() => {
                 console.log("save error");
@@ -183,6 +184,10 @@ export function Options(): JSX.Element {
     };
 
     const getMyServers = () => {
+        setFormData((prevState) => ({
+            ...prevState,
+            saveButtonText: "Refreshing server list",
+        }));
         getServers({
             key: formData.battlemetricsApiToken,
         })
@@ -205,15 +210,25 @@ export function Options(): JSX.Element {
                     }
                     newState["orgServers"] = orgServers;
                     newState["battlemetricsApiTokenIsValid"] = true;
+                    newState["refreshingServers"] = false;
+                    newState["saveButtonText"] = "Save options";
                     setFormData(newState);
                 } else {
                     const newState = { ...formData };
                     newState["orgServers"] = [];
                     newState["battlemetricsApiTokenIsValid"] = false;
+                    newState["refreshingServers"] = false;
                     setFormData(newState);
                 }
             })
             .catch(() => {});
+    };
+
+    const handleRefreshServers = () => {
+        const newState = { ...formData };
+        newState["refreshingServers"] = true;
+        setFormData(newState);
+        getMyServers();
     };
 
     console.log(formData);
@@ -299,6 +314,8 @@ export function Options(): JSX.Element {
                     <Servers
                         serverList={formData.orgServers}
                         onChange={handleServersSelection}
+                        refreshingServers={formData.refreshingServers}
+                        onClick={handleRefreshServers}
                     />
                 ) : (
                     <Spinner />
@@ -309,7 +326,7 @@ export function Options(): JSX.Element {
                     onClick={handleSave}
                 >
                     {formData.saveEnabled
-                        ? "Save options"
+                        ? formData.saveButtonText
                         : "Fill the required fields"}
                 </button>
             </form>
