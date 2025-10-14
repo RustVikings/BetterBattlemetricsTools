@@ -163,7 +163,7 @@ export function Options(): JSX.Element {
     };
 
     const handleOnBlur = (e: FocusEvent<HTMLInputElement>) => {
-        const { name, value, type, checked, id } = e.target;
+        const { name, value, type, checked } = e.target;
         if (type === "text") {
             const validationResult = handleApiKeyValidation(name, value);
             const validationProp = name + "IsValid";
@@ -256,8 +256,7 @@ export function Options(): JSX.Element {
                     ...prevState,
                     saveButtonText: "Options saved!",
                 }));
-            })
-            .catch(() => {});
+            });
     };
 
     const getMyServers = () => {
@@ -268,38 +267,36 @@ export function Options(): JSX.Element {
 
         getServers({
             key: formData.battlemetricsApiToken,
-        })
-            .then((response) => {
-                if (response.serverList.servers) {
-                    const newState = { ...formData };
-                    const orgServers = [];
-                    for (const [key, value] of Object.entries(
-                        response.serverList.servers,
-                    )) {
-                        orgServers.push({
-                            checked: true,
-                            server: {
-                                name: value.attributes.name,
-                                id: value.id,
-                                ip: value.attributes.ip,
-                                port: value.attributes.port,
-                            },
-                        });
-                    }
-                    newState["orgServers"] = orgServers;
-                    newState["battlemetricsApiTokenIsValid"] = true;
-                    newState["refreshingServers"] = false;
-                    newState["saveButtonText"] = "Save options";
-                    setFormData(newState);
-                } else {
-                    const newState = { ...formData };
-                    newState["orgServers"] = [];
-                    newState["battlemetricsApiTokenIsValid"] = false;
-                    newState["refreshingServers"] = false;
-                    setFormData(newState);
+        }).then((response) => {
+            if (response.serverList.servers) {
+                const newState = { ...formData };
+                const orgServers = [];
+                for (const [key, value] of Object.entries(
+                    response.serverList.servers,
+                )) {
+                    orgServers.push({
+                        checked: true,
+                        server: {
+                            name: value.attributes.name,
+                            id: value.id,
+                            ip: value.attributes.ip,
+                            port: value.attributes.port,
+                        },
+                    });
                 }
-            })
-            .catch(() => {});
+                newState["orgServers"] = orgServers;
+                newState["battlemetricsApiTokenIsValid"] = true;
+                newState["refreshingServers"] = false;
+                newState["saveButtonText"] = "Save options";
+                setFormData(newState);
+            } else {
+                const newState = { ...formData };
+                newState["orgServers"] = [];
+                newState["battlemetricsApiTokenIsValid"] = false;
+                newState["refreshingServers"] = false;
+                setFormData(newState);
+            }
+        });
     };
 
     const handleRefreshServers = () => {

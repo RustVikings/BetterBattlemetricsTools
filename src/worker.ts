@@ -2,6 +2,8 @@ import Browser from "webextension-polyfill";
 import { onGetServers } from "./messaging/battlemetrics/getServers";
 import { onGetOptions } from "./messaging/internal/getOptions";
 import { getMyServers } from "./apis/battlemetrics/getUserServers";
+import { getPlayer } from "./apis/battlemetrics/getPlayer";
+import { oneGetPlayer } from "./messaging/battlemetrics/getPlayer";
 
 Browser.runtime.onInstalled.addListener(() => {
     console.log("Extention loaded: Better Battlemetrics Tools");
@@ -41,5 +43,20 @@ onGetOptions(async (sendResponse: CallableFunction) => {
     console.log("worker: Options fetched", Options);
     return sendResponse({
         Options,
+    });
+});
+
+oneGetPlayer(async (sendResponse: CallableFunction, battlemetrics) => {
+    let player;
+    await getPlayer(battlemetrics.battlemetricsApiToken, battlemetrics.playerId)
+        .then((res) => {
+            player = res;
+        })
+        .catch(() => {
+            return false;
+        });
+        console.log("worker: player fetched", player);
+    return sendResponse({
+        player,
     });
 });
