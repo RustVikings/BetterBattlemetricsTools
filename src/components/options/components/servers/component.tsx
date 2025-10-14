@@ -48,8 +48,6 @@ export function Servers(props: ServersProps): JSX.Element {
                         src="./icons/refresh.svg"
                         title="Refresh servers"
                         alt="Refresh server"
-                        height={24}
-                        width={24}
                         className={
                             props.refreshingServers ? "animate-spin" : ""
                         }

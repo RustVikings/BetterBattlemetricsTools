@@ -1,4 +1,4 @@
-import React, { JSX, InputHTMLAttributes } from "react";
+import React, { JSX, InputHTMLAttributes, useState, useEffect } from "react";
 import css from "../../styles.module.css";
 import classNames from "classnames";
 
@@ -11,9 +11,37 @@ interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
     required: boolean;
 }
 
+interface VisibilityButtonProps {
+    visible: boolean;
+    setVisibility: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function VisibilityButton({
+    visible,
+    setVisibility,
+}: VisibilityButtonProps): JSX.Element {
+    const handleVisibilityToggle = () => {
+        setVisibility((prev) => !prev);
+    };
+
+    return (
+        <button
+            type="button"
+            className={classNames(css.button, css.refresh)}
+            onClick={handleVisibilityToggle}
+        >
+            <img
+                src={visible ? "./icons/visible.svg" : "./icons/invisible.svg"}
+                title="Refresh servers"
+                alt="Refresh server"
+            />
+        </button>
+    );
+}
+
 export function TextInput(props: TextInputProps): JSX.Element {
-    // console.log(props.name + " rendered");
-    // console.log("inputIsValid: " + props.inputIsValid);
+    const [visibility, setVisibility] = useState<boolean>(false);
+
     return (
         <div
             className={
@@ -41,16 +69,22 @@ export function TextInput(props: TextInputProps): JSX.Element {
                     />
                 </a>
             </label>
-            <input
-                type="text"
-                id={props?.name}
-                name={props?.name}
-                placeholder={props?.placeholder}
-                value={props.value}
-                onChange={props.onChange}
-                onBlur={props.onBlur}
-                onFocus={props.onFocus}
-            />
+            <div className={css.input_visibility}>
+                <input
+                    type={visibility ? "text" : "password"}
+                    id={props?.name}
+                    name={props?.name}
+                    placeholder={props?.placeholder}
+                    value={props.value}
+                    onChange={props.onChange}
+                    onBlur={props.onBlur}
+                    onFocus={props.onFocus}
+                />
+                <VisibilityButton
+                    visible={visibility || false}
+                    setVisibility={setVisibility}
+                />
+            </div>
             <span className={css.error_message}>{props.errorMessage}</span>
             {props.permissions ? (
                 <span className={css.permissions}>{props.permissions}</span>

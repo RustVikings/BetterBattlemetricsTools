@@ -12,13 +12,15 @@ import { Spinner } from "./components/spinner";
 import css from "./styles.module.css";
 import Browser = require("webextension-polyfill");
 import { getServers } from "../../messaging/battlemetrics/getServers";
+import { getOptions } from "../../messaging/internal/getOptions";
+import version from "../../manifest.json";
 
-interface OrgServer {
+export interface OrgServer {
     checked: boolean;
     server: Record<string, unknown>;
 }
 
-interface OptionsProps {
+export interface OptionsProps {
     arkanLink: boolean;
     battlemetricsApiToken: string;
     battlemetricsApiTokenIsValid?: boolean;
@@ -35,23 +37,83 @@ interface OptionsProps {
 }
 
 export function Options(): JSX.Element {
-    const initializeForm = (): OptionsProps => {
-        return {
-            arkanLink: true,
-            battlemetricsApiToken: "",
-            guardianLink: true,
-            rustAdminLink: true,
-            rustStatsLink: true,
-            serverArmourLink: true,
-            steamApiKey: "",
-            saveEnabled: false,
-            orgServers: [],
-            saveButtonText: "Save options",
-            refreshingServers: false,
-        };
+    const defaultOptions: OptionsProps = {
+        arkanLink: true,
+        battlemetricsApiToken: "",
+        guardianLink: true,
+        rustAdminLink: true,
+        rustStatsLink: true,
+        serverArmourLink: true,
+        steamApiKey: "",
+        saveEnabled: false,
+        orgServers: [],
+        saveButtonText: "Save options",
+        refreshingServers: false,
     };
 
-    const [formData, setFormData] = useState(initializeForm);
+    const [formData, setFormData] = useState<OptionsProps>(defaultOptions);
+
+    useEffect(() => {
+        async function fetchOptions() {
+            try {
+                const response = await getOptions({});
+                const options = response.Options;
+                if (options) {
+                    setFormData({
+                        arkanLink:
+                            typeof options?.arkanLink === "boolean"
+                                ? options.arkanLink
+                                : true,
+                        battlemetricsApiToken:
+                            typeof options?.battlemetricsApiToken === "string"
+                                ? options.battlemetricsApiToken
+                                : "",
+                        battlemetricsApiTokenIsValid:
+                            typeof options?.battlemetricsApiToken ===
+                                "string" &&
+                            options.battlemetricsApiToken.length > 0
+                                ? true
+                                : false,
+                        guardianLink:
+                            typeof options?.guardianLink === "boolean"
+                                ? options.guardianLink
+                                : true,
+                        rustAdminLink:
+                            typeof options?.rustAdminLink === "boolean"
+                                ? options.rustAdminLink
+                                : true,
+                        rustStatsLink:
+                            typeof options?.rustStatsLink === "boolean"
+                                ? options.rustStatsLink
+                                : true,
+                        serverArmourLink:
+                            typeof options?.serverArmourLink === "boolean"
+                                ? options.serverArmourLink
+                                : true,
+                        steamApiKey:
+                            typeof options?.steamApiKey === "string"
+                                ? options.steamApiKey
+                                : "",
+                        steamApiKeyIsValid:
+                            typeof options?.steamApiKey === "string" &&
+                            options.steamApiKey.length > 0
+                                ? true
+                                : false,
+                        saveEnabled: false,
+                        orgServers: Array.isArray(options?.orgServers)
+                            ? options.orgServers
+                            : [],
+                        saveButtonText: "Options loaded",
+                        refreshingServers: false,
+                    });
+                }
+            } catch (e) {
+                // fallback to defaultOptions
+                setFormData(defaultOptions);
+            }
+        }
+        fetchOptions();
+    }, []);
 
     const handleApiKeyValidation = (type: string, value: string): boolean => {
         if (type === "steamApiKey") {
@@ -75,23 +137,28 @@ export function Options(): JSX.Element {
 
     const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
-        if (type === "text") {
+        if (type === "text" || type === "password") {
             const validationResult = handleApiKeyValidation(name, value);
             const validationProp = name + "IsValid";
             if (name === "steamApiKey") {
-                setFormData(() => ({
-                    ...formData,
+                setFormData((prevState) => ({
+                    ...prevState,
                     [name]: value,
                     [validationProp]: validationResult,
+                    saveButtonText: "Save options",
                 }));
             } else {
-                setFormData(() => ({
-                    ...formData,
+                setFormData((prevState) => ({
+                    ...prevState,
                     [name]: value,
                 }));
             }
         } else {
-            setFormData(() => ({ ...formData, [name]: checked }));
+            setFormData((prevState) => ({
+                ...prevState,
+                [name]: checked,
+                saveButtonText: "Save options",
+            }));
         }
     };
 
@@ -101,26 +168,51 @@ export function Options(): JSX.Element {
             const validationResult = handleApiKeyValidation(name, value);
             const validationProp = name + "IsValid";
             if (name === "steamApiKey") {
-                setFormData(() => ({
-                    ...formData,
+                setFormData((prevState) => ({
+                    ...prevState,
                     [name]: value,
                     [validationProp]: validationResult,
+                    saveButtonText: "Save options",
                 }));
             } else {
-                setFormData(() => ({
-                    ...formData,
+                setFormData((prevState) => ({
+                    ...prevState,
                     [name]: value,
+                    saveButtonText: "Save options",
                 }));
             }
         }
         if (type === "checkbox") {
-            setFormData(() => ({ ...formData, [name]: checked }));
+            setFormData((prevState) => ({
+                ...prevState,
+                [name]: checked,
+                saveButtonText: "Save options",
+            }));
         }
     };
 
     useEffect(() => {
-        getMyServers();
+        if (
+            handleApiKeyValidation(
+                "battlemetricsApiToken",
+                formData.battlemetricsApiToken,
+            ) &&
+            formData.orgServers.length === 0
+        ) {
+            getMyServers();
+        }
     }, [formData.battlemetricsApiToken]);
+
+    useEffect(() => {
+        if (handleApiKeyValidation("steamApiKey", formData.steamApiKey)) {
+            setFormData((prevState) => ({
+                ...prevState,
+                steamApiKeyIsValid: true,
+            }));
+        }
+    }, [formData.steamApiKey]);
+
+    // console.log("render:formData", formData);
 
     useEffect(() => {
         if (
@@ -135,14 +227,9 @@ export function Options(): JSX.Element {
             newState["saveEnabled"] = false;
             setFormData(newState);
         }
-    }, [
-        formData.battlemetricsApiToken,
-        formData.battlemetricsApiTokenIsValid,
-        formData.steamApiKey,
-        formData.steamApiKeyIsValid,
-    ]);
+    }, [formData.battlemetricsApiTokenIsValid, formData.steamApiKeyIsValid]);
 
-    const handleServersSelection = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleServerSelection = (e: ChangeEvent<HTMLInputElement>) => {
         const { id } = e.target;
         const sid = parseInt(id.substring(1));
         const newState: OptionsProps = { ...formData };
@@ -150,44 +237,35 @@ export function Options(): JSX.Element {
             newState.orgServers[sid].checked =
                 !newState.orgServers[sid].checked;
             setFormData(newState);
-            console.log("server click", newState.orgServers[sid]);
         }
+        console.log("Toggling server selection");
+        setFormData((prevState) => ({
+            ...prevState,
+            saveButtonText: "Save options",
+        }));
     };
 
     const handleSave = () => {
-        const options = {
-            battlemetricsApiToken: JSON.stringify(
-                formData.battlemetricsApiToken,
-            ),
-            steamApiKey: JSON.stringify(formData.steamApiKey),
-            arkanLink: JSON.stringify(formData.arkanLink),
-            guardianLink: JSON.stringify(formData.guardianLink),
-            rustAdminLink: JSON.stringify(formData.rustAdminLink),
-            rustStatsLink: JSON.stringify(formData.rustStatsLink),
-            serverArmourLink: JSON.stringify(formData.serverArmourLink),
-            orgServers: JSON.stringify(formData.orgServers),
-        };
-
-        Browser.storage.sync
+        const options = { ...formData };
+        Browser.storage.local
             .set({
                 ...options,
             })
             .then(() => {
                 setFormData((prevState) => ({
                     ...prevState,
-                    saveButtonText: "Options saved",
+                    saveButtonText: "Options saved!",
                 }));
             })
-            .catch(() => {
-                console.log("save error");
-            });
+            .catch(() => {});
     };
 
     const getMyServers = () => {
         setFormData((prevState) => ({
             ...prevState,
-            saveButtonText: "Refreshing server list",
+            saveButtonText: "Refreshing server list...",
         }));
+
         getServers({
             key: formData.battlemetricsApiToken,
         })
@@ -231,11 +309,15 @@ export function Options(): JSX.Element {
         getMyServers();
     };
 
-    console.log(formData);
-
     return (
         <div className={css.options_form}>
-            <h1>Plugin name options</h1>
+            <h1>
+                <img src="./icons/icon_128.png" style={{}} />
+                <span className={css.text}>
+                    Better Battlemetrics Tools{" "}
+                    <span className={css.version}>v{version.version}</span>
+                </span>
+            </h1>
             <form>
                 <fieldset>
                     <TextInput
@@ -313,7 +395,7 @@ export function Options(): JSX.Element {
                 {formData.orgServers ? (
                     <Servers
                         serverList={formData.orgServers}
-                        onChange={handleServersSelection}
+                        onChange={handleServerSelection}
                         refreshingServers={formData.refreshingServers}
                         onClick={handleRefreshServers}
                     />

@@ -8,8 +8,9 @@ html {
 
 body {
     @apply m-5;
-    @apply bg-slate-900;
+    @apply bg-gray-900;
     @apply text-white;
+    @apply overflow-x-hidden;
     #options_container {
         @apply flex;
         @apply flex-col;

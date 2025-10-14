@@ -1,5 +1,6 @@
 import Browser from "webextension-polyfill";
 import { onGetServers } from "./messaging/battlemetrics/getServers";
+import { onGetOptions } from "./messaging/internal/getOptions";
 import { getMyServers } from "./apis/battlemetrics/getUserServers";
 
 Browser.runtime.onInstalled.addListener(() => {
@@ -31,5 +32,14 @@ onGetServers(async (sendResponse: CallableFunction, battlemetrics) => {
     );
     return sendResponse({
         serverList,
+    });
+});
+
+onGetOptions(async (sendResponse: CallableFunction) => {
+    console.log("worker: Fetching options...");
+    const Options = await Browser.storage.local.get();
+    console.log("worker: Options fetched", Options);
+    return sendResponse({
+        Options,
     });
 });
