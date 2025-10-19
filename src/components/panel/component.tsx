@@ -4,147 +4,166 @@ import React, {
     createContext,
     useState,
     useEffect,
-    use,
 } from "react";
 import { getOptions } from "../../messaging/internal/getOptions";
-import { getPlayer } from "../../messaging/battlemetrics/getPlayer";
+import { getPlayerInfo } from "../../messaging/battlemetrics/getPlayerInfo";
+import { getPlayerSummaries } from "../../messaging/steam/getPlayerSummaries";
+import { getSteamProfile } from "../../messaging/battlemetrics/getSteamProfile";
 import css from "./styles.module.css";
-import { OrgServer, OptionsProps } from "../options/component";
+import { OrgServer } from "../options/component";
+import { PlayerBanner } from "./components/playerbanner/";
+import { CurrentServer } from "./components/currentserver/component";
+import { PlayerInfo } from "./components/playerinfo/component";
 
-interface Player {
+interface PlayerProps {
     id?: string;
-    steamId?: string;
+    steamID?: string;
 }
 
-interface BattlemetricsPlayer {
-    id?: string;
-    attributes?: {
-        identifiers?: string[];
-    };
+interface SteamProfileProps {
+    avatar?: string;
+    personaname?: string;
+    profileurl?: string;
 }
-interface DataProps {
+
+interface OptionsProps {
     battlemetricsApiToken: string;
     steamApiKey: string;
     orgServers: OrgServer[];
-    player?: Player | null;
 }
 
 type DataContextType = {
-    data: DataProps;
-    setData: React.Dispatch<React.SetStateAction<any>>;
+    options: OptionsProps;
+    setOptions: React.Dispatch<React.SetStateAction<OptionsProps>>;
+    playerData: PlayerProps;
+    setPlayerData: React.Dispatch<React.SetStateAction<PlayerProps>>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export function Panel(): JSX.Element;
-const currentPageURL = window.location.href;
-const urlMatches = currentPageURL.matchAll(
-    /http[s]*:\/\/www.battlemetrics.com\/rcon\/players\/(\d+)/g,
-);
-const playerId = urlMatches?.next().value?.[1] || null;
+export function Panel(): JSX.Element {
+    const currentPageURL = window.location.href;
+    const urlMatches = currentPageURL.matchAll(
+        /http[s]*:\/\/www.battlemetrics.com\/rcon\/players\/(\d+)/g,
+    );
+    const playerId = urlMatches?.next().value?.[1] || undefined;
 
-const defaultOptions: DataProps = {
-    battlemetricsApiToken: "",
-    steamApiKey: "",
-    orgServers: [],
-    player: null,
-};
+    const defaultOptions: OptionsProps = {
+        battlemetricsApiToken: "",
+        steamApiKey: "",
+        orgServers: [],
+    };
 
-const [data, setData] = useState<DataProps>(defaultOptions);
-useEffect(() => {
-    async function fetchOptions() {
-        try {
-            const response = await getOptions({});
-            const options = response.Options;
-            if (options) {
-                setData({
-                    battlemetricsApiToken:
-                        typeof options?.battlemetricsApiToken === "string"
-                            ? options.battlemetricsApiToken
-                            : "",
-                    steamApiKey:
-                        typeof options?.steamApiKey === "string"
-                            ? options.steamApiKey
-                            : "",
-                    orgServers: Array.isArray(options?.orgServers)
-                        ? options.orgServers
-                        : [],
-                    player: playerId ? { id: playerId, steamId: "" } : null,
-                });
+    const defaultPlayer: PlayerProps = {
+        id: playerId,
+        steamID: undefined,
+    };
+
+    const [options, setOptions] = useState<OptionsProps>(defaultOptions);
+    const [playerData, setPlayerData] = useState<PlayerProps>(defaultPlayer);
+
+    /*  useEffect(() => {
+        async function fetchOptions() {
+            try {
+                const response = await getOptions(null);
+                const options = response.Options;
+                if (options) {
+                    setOptions({
+                        battlemetricsApiToken:
+                            typeof options?.battlemetricsApiToken === "string"
+                                ? options.battlemetricsApiToken
+                                : "",
+                        steamApiKey:
+                            typeof options?.steamApiKey === "string"
+                                ? options.steamApiKey
+                                : "",
+                        orgServers: Array.isArray(options?.orgServers)
+                            ? options.orgServers
+                            : [],
+                    });
+                }
+            } catch (e) {
+                // fallback to defaultOptions
+                setOptions(defaultOptions);
             }
-        } catch (e) {
-            // fallback to defaultOptions
-            setData(defaultOptions);
         }
-    }
-    fetchOptions();
-}, []);
+        fetchOptions();
+    }, []); */
 
-useEffect(() => {
-    async function fetchPlayer() {
-        try {
-            if (data.battlemetricsApiToken && data.player?.id) {
-                const response = await getPlayer({
-                    battlemetricsApiToken: data.battlemetricsApiToken,
-                    playerId: data.player.id,
-                });
-                const player: BattlemetricsPlayer = response.player;
-
-                console.log("Panel: fetched player", player);
-                // if (player) {
-                //     const playerId: string | undefined =
-                //         typeof player.id === "string" ? player.id : undefined;
-                //     let steamId: string | undefined = undefined;
-                //     if (
-                //         player.attributes &&
-                //         Array.isArray(player.attributes.identifiers)
-                //     ) {
-                //         const foundSteamId = player.attributes.identifiers.find(
-                //             (id: string) =>
-                //                 typeof id === "string" &&
-                //                 id.startsWith("steam:"),
-                //         );
-                //         steamId = foundSteamId
-                //             ? foundSteamId.replace("steam:", "")
-                //             : undefined;
-                //     }
-                //     setData((prevData: DataProps) => ({
-                //         ...prevData,
-                //         player: {
-                //             id: playerId,
-                //             steamId: steamId,
-                //         },
-                //     }));
-                // }
+    /* useEffect(() => {
+        async function fetchPlayer() {
+            if (options.battlemetricsApiToken && playerData?.id) {
+                console.log(
+                    "Panel: fetching player",
+                    playerData.id,
+                    options.battlemetricsApiToken,
+                );
+                try {
+                    const response = await getPlayerInfo({
+                        battlemetricsApiToken: options.battlemetricsApiToken,
+                        playerId: playerData.id,
+                    });
+                    const player = response.player;
+                    console.log("Panel: fetched player", player);
+                    if (player) {
+                        console.log("Panel: playerRecord", player);
+                        setPlayerData((prevData) => ({
+                            ...prevData,
+                            id: playerId,
+                            steamID: player as string,
+                        }));
+                    } else {
+                        setPlayerData((prevData) => ({
+                            ...prevData,
+                            steamId: undefined,
+                        }));
+                    }
+                } catch (e) {
+                    // fallback to defaultPlayer
+                    setPlayerData((prevData) => ({
+                        ...prevData,
+                        steamId: undefined,
+                    }));
+                }
             }
-        } catch (e) {
-            // fallback to defaultOptions
-            setData((prevData: DataProps) => ({
-                ...prevData,
-                player: null,
-            }));
         }
-    }
-    fetchPlayer();
-}, [data.battlemetricsApiToken, data.player?.id]);
+        fetchPlayer();
+    }, [options.battlemetricsApiToken, playerData.id]); */
 
-console.log("Panel: data", data);
-return (
-    <DataContext value={{ data, setData }}>
-        <div className={css.box}>
-            <div className="col-span-2"></div>
-            <div className={css.player}>
-                <h1>
-                    <span className={css.avatar}>
-                        <img
-                            src="https://avatars.fastly.steamstatic.com/80e716ad96f7a7e6f70ee447687be794299fd8a8_medium.jpg"
-                            alt="Player name"
-                        />
-                        {data.steamApiKey}
-                    </span>
-                    {"Player name"}
-                </h1>
+    /* useEffect(() => {
+        async function fetchSteamPlayer() {
+            if (options.steamApiKey && playerData?.steamID) {
+                console.log(
+                    "Panel: fetching steam player",
+                    playerData.steamID,
+                    options.steamApiKey,
+                );
+                try {
+                    const response = await getPlayerSummaries({
+                        steamApiKey: options.steamApiKey,
+                        steamID: playerData.steamID,
+                    });
+                    const steamPlayer = response.player;
+                    console.log("Panel: fetched steam player", steamPlayer);
+                    if (steamPlayer) {
+                        console.log("Panel: steamPlayerRecord", steamPlayer);
+                        // You can update playerData with more Steam info if needed
+                    }
+                } catch (e) {
+                    // Handle error if needed
+                }
+            }
+        }
+        fetchSteamPlayer();
+    }, [options.steamApiKey, playerData.steamID]); */
+
+    return (
+        <DataContext value={{ options, setOptions, playerData, setPlayerData }}>
+            <div className={css.box}>
+                <PlayerBanner />
+                <CurrentServer />
+                <PlayerInfo />
             </div>
-        </div>
-    </DataContext>
-);
+        </DataContext>
+    );
+}

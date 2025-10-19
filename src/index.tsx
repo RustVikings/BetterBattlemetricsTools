@@ -15,15 +15,26 @@ function waitForElement(
             clearInterval(interval);
             callback(element);
         }
-    }, 100);
+        console.log("Waiting for element:", selector);
+    }, 500);
 }
 
-waitForElement("#RCONPlayerPage", (element: Element) => {
-    // console.log("Element exists:", element);
-    // Perform actions on the element
-    const div = document.createElement("div");
-    div.className = "BRT";
-    element.prepend(div);
-    const root = createRoot(div);
-    root.render(<Panel />);
+Browser.runtime.onMessage.addListener((message: any) => {
+    if (message.action === "renderPanel") {
+        waitForElement("#RCONPlayerPage", (element: Element) => {
+            const extensionElement = document.getElementById("BRT");
+            if (extensionElement) {
+                console.log("Element .BRT already exists: rendering Panel");
+                const root = createRoot(extensionElement);
+                root.render(<Panel />);
+            } else {
+                console.log("Creating and rendering .BRT element");
+                const div = document.createElement("div");
+                div.id = "BRT";
+                element.prepend(div);
+                const root = createRoot(div);
+                root.render(<Panel />);
+            }
+        });
+    }
 });

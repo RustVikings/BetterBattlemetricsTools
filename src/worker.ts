@@ -1,12 +1,13 @@
-import Browser from "webextension-polyfill";
-import { onGetServers } from "./messaging/battlemetrics/getServers";
+import { getPlayerInfo } from "./apis/battlemetrics/getPlayerInfo";
+import { getUserServers } from "./apis/battlemetrics/getUserServers";
+import { getSteamProfile } from "./apis/battlemetrics/getSteamProfile";
+import { onGetSteamProfile } from "./messaging/battlemetrics/getSteamProfile";
 import { onGetOptions } from "./messaging/internal/getOptions";
-import { getMyServers } from "./apis/battlemetrics/getUserServers";
-import { getPlayer } from "./apis/battlemetrics/getPlayer";
-import { oneGetPlayer } from "./messaging/battlemetrics/getPlayer";
+import { onGetPlayerInfo } from "./messaging/battlemetrics/getPlayerInfo";
+import { onGetServers } from "./messaging/battlemetrics/getServers";
+import Browser from "webextension-polyfill";
 
 Browser.runtime.onInstalled.addListener(() => {
-    console.log("Extention loaded: Better Battlemetrics Tools");
     let SETTINGS;
 
     if (!SETTINGS) {
@@ -15,48 +16,101 @@ Browser.runtime.onInstalled.addListener(() => {
     }
 });
 
-onGetServers(async (sendResponse: CallableFunction, battlemetrics) => {
-    let serverList;
-    await fetch(
-        `https://api.battlemetrics.com/servers?filter[rcon]=true&page[size]=100&access_token=${battlemetrics.key}`,
-    ).then((apiResponse) =>
-        apiResponse
-            .json()
-            .then((toJson) => ({
-                servers: toJson.data,
-            }))
-            .then((res) => {
-                serverList = res;
-            })
-            .catch(() => {
-                return false;
-            }),
-    );
-    return sendResponse({
-        serverList,
+Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
+    console.log("webNavigation onCompleted:", details);
+    Browser.tabs.sendMessage(details.tabId, {
+        action: "renderPanel",
+        details,
+    });
+});
+
+Browser.webNavigation.onCompleted.addListener((details) => {
+    console.log("webNavigation onCompleted:", details);
+    Browser.tabs.sendMessage(details.tabId, {
+        action: "renderPanel",
+        details,
     });
 });
 
 onGetOptions(async (sendResponse: CallableFunction) => {
-    console.log("worker: Fetching options...");
-    const Options = await Browser.storage.local.get();
-    console.log("worker: Options fetched", Options);
-    return sendResponse({
-        Options,
-    });
+    try {
+        const options = await Browser.storage.local.get();
+        console.log("worker: options fetched", options);
+        return sendResponse({
+            Options: options,
+        });
+    } catch (error) {
+        console.error("Error fetching options:", error);
+        return sendResponse({
+            Options: null,
+        });
+    }
 });
 
-oneGetPlayer(async (sendResponse: CallableFunction, battlemetrics) => {
-    let player;
-    await getPlayer(battlemetrics.battlemetricsApiToken, battlemetrics.playerId)
-        .then((res) => {
-            player = res;
-        })
-        .catch(() => {
-            return false;
-        });
-        console.log("worker: player fetched", player);
-    return sendResponse({
-        player,
-    });
-});
+onGetServers(
+    async (
+        sendResponse: CallableFunction,
+        getServersArgs: { battlemetricsApiToken: string },
+    ) => {
+        try {
+            console.log("worker: getUserServers called", getServersArgs);
+            const response = (await getUserServers(
+                getServersArgs.battlemetricsApiToken,
+            )) as { servers: Record<string, unknown> };
+            return sendResponse({
+                servers: response.servers,
+            });
+        } catch (error) {
+            console.error("Error fetching servers:", error);
+            return sendResponse({
+                servers: null,
+            });
+        }
+    },
+);
+
+onGetPlayerInfo(
+    async (
+        sendResponse: CallableFunction,
+        getPlayerInfoArgs: {
+            battlemetricsApiToken: string;
+            playerId: string;
+        },
+    ) => {
+        try {
+            const response = (await getPlayerInfo(
+                getPlayerInfoArgs.battlemetricsApiToken,
+                getPlayerInfoArgs.playerId,
+            )) as { steamID: string };
+            return sendResponse({
+                player: response.steamID,
+            });
+        } catch (error) {
+            console.error("Error fetching player:", error);
+            return sendResponse({
+                player: null,
+            });
+        }
+    },
+);
+onGetSteamProfile(
+    async (
+        sendResponse: CallableFunction,
+        getSteamProfileArgs: { steamID: string; steamApiKey: string },
+    ) => {
+        try {
+            const response = (await getSteamProfile(
+                getSteamProfileArgs.steamID,
+                getSteamProfileArgs.steamApiKey,
+            )) as unknown as { profile: Record<string, unknown> };
+            return sendResponse({
+                profile: response.profile,
+            });
+        } catch (error) {
+            console.error("Error fetching Steam profile:", error);
+            return sendResponse({
+                profile: null,
+            });
+        }
+    },
+);

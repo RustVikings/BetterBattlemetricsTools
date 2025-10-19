@@ -1,14 +1,11 @@
-export async function getMyServers(battlemetricsApiKey: string): Promise<any> {
-    await fetch(
+export async function getUserServers(
+    battlemetricsApiKey: string,
+): Promise<unknown> {
+    const apiResponse = await fetch(
         `https://api.battlemetrics.com/servers?filter[rcon]=true&page[size]=100&access_token=${battlemetricsApiKey}`,
-    ).then((apiResponse) =>
-        apiResponse
-            .json()
-            .then((toJson) => ({
-                servers: toJson.data,
-            }))
-            .then((res) => {
-                return { ...res.servers };
-            }),
     );
+    const toJson = await apiResponse.json();
+    return {
+        servers: toJson.data,
+    };
 }

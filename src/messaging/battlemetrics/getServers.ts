@@ -1,9 +1,9 @@
 import { createMessage } from "@vocably/hermes";
 
-type battlemetrics = { key: string };
-type getServersResponse = { serverList: Record<string, unknown> };
+type getServersArgs = { battlemetricsApiToken: string };
+type getServersResponse = { servers: Record<string, unknown> };
 
 export const [getServers, onGetServers] = createMessage<
-    battlemetrics,
+    getServersArgs,
     getServersResponse
 >("getServers");

@@ -35,13 +35,27 @@
         "activeTab",
         "notifications",
         "scripting",
-        "storage"
+        "storage",
+        "webNavigation"
     ],
     "options_page": "index.html",
     "background": {
-        "scripts": ["worker.js"],
         "service_worker": "worker.js",
         "type": "module",
+        "scripts": ["worker.js"],
         "persistent": "false"
-    }
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "icons/copy.svg",
+                "icons/kill.svg",
+                "icons/death.svg"
+            ],
+            "matches": [
+                "*://www.battlemetrics.com/*",
+                "*://battlemetrics.com/*"
+            ]
+        }
+    ]
 }

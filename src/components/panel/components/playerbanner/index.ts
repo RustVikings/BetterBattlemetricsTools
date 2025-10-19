@@ -1,0 +1,1 @@
+export { PlayerBanner } from "./component";

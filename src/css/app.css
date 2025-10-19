@@ -2,11 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    font-size: 14px;
+html {
+    font-size: 16px;
+}
 
-    h1 {
-        font-size: 3.5rem;
+body {
+    h1.css-8uhtka {
+        display: none;
     }
 
     h2 {

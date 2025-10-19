@@ -56,7 +56,7 @@ export function Options(): JSX.Element {
     useEffect(() => {
         async function fetchOptions() {
             try {
-                const response = await getOptions({});
+                const response = await getOptions(null);
                 const options = response.Options;
                 if (options) {
                     setFormData({
@@ -199,7 +199,7 @@ export function Options(): JSX.Element {
             ) &&
             formData.orgServers.length === 0
         ) {
-            getMyServers();
+            getUserServers();
         }
     }, [formData.battlemetricsApiToken]);
 
@@ -259,28 +259,31 @@ export function Options(): JSX.Element {
             });
     };
 
-    const getMyServers = () => {
+    const getUserServers = () => {
         setFormData((prevState) => ({
             ...prevState,
             saveButtonText: "Refreshing server list...",
         }));
 
         getServers({
-            key: formData.battlemetricsApiToken,
+            battlemetricsApiToken: formData.battlemetricsApiToken,
         }).then((response) => {
-            if (response.serverList.servers) {
+            const servers = response.servers;
+            if (response.servers) {
                 const newState = { ...formData };
                 const orgServers = [];
-                for (const [key, value] of Object.entries(
-                    response.serverList.servers,
-                )) {
+                for (const [key, value] of Object.entries(servers)) {
+                    const server = value as {
+                        id: string;
+                        attributes: { name: string; ip: string; port: number };
+                    };
                     orgServers.push({
                         checked: true,
                         server: {
-                            name: value.attributes.name,
-                            id: value.id,
-                            ip: value.attributes.ip,
-                            port: value.attributes.port,
+                            name: server.attributes.name,
+                            id: server.id,
+                            ip: server.attributes.ip,
+                            port: server.attributes.port,
                         },
                     });
                 }
@@ -303,7 +306,7 @@ export function Options(): JSX.Element {
         const newState = { ...formData };
         newState["refreshingServers"] = true;
         setFormData(newState);
-        getMyServers();
+        getUserServers();
     };
 
     return (
