@@ -12,8 +12,9 @@ import { Spinner } from "./components/spinner";
 import css from "./styles.module.css";
 import Browser = require("webextension-polyfill");
 import { getServers } from "../../messaging/battlemetrics/getServers";
-import { getOptions } from "../../messaging/internal/getOptions";
+import { getSettings } from "../../messaging/internal/getSettings";
 import version from "../../manifest.json";
+import { get } from "http";
 
 export interface OrgServer {
     checked: boolean;
@@ -56,7 +57,7 @@ export function Options(): JSX.Element {
     useEffect(() => {
         async function fetchOptions() {
             try {
-                const response = await getOptions(null);
+                const response = await getSettings(null);
                 const options = response.Options;
                 if (options) {
                     setFormData({

@@ -1,19 +1,22 @@
 @import "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .box {
     /* color variables */
     --bm-bg-color: #222;
     --bbt-link-color: #9d9d9d;
-    --bbt-red: #ff2020;
+    --bbt-red: #ca3d3d;
     --bbt-amber: #d99400;
-    --bbt-green: #66ba00;
+    --bbt-green: #61a138;
     --bbt-divider: #3a3a3a;
-    --bbt-label: rgba(255, 255, 255, 0.4);
+    --bbt-label: rgba(255, 255, 255, 0.6);
     --bbt-widget-bg: #191919;
     font-family: "Open Sans", sans-serif;
 
     @layer bg-[var(--bm-bg-color) ];
-    @apply mb-4;
+    margin-top: 16px;
 
     a {
         color: var(--bbt-link-color);
@@ -23,10 +26,13 @@
     }
 
     .section {
-        @apply my-4;
-        @apply pb-4;
-        @apply border-b;
+        @apply border-b items-center;
         border-bottom-color: var(--bbt-divider);
+        margin: 16px 0;
+        padding-bottom: 16px;
+        &:last-child {
+            @apply mb-0;
+        }
     }
 
     .cols_4 {
@@ -46,13 +52,15 @@
         .data_point_label {
             color: var(--bbt-label);
             @apply inline-block;
-            @apply uppercase text-xs;
+            @apply uppercase;
             @apply mb-1;
             @apply font-light;
+            font-size: 12px;
         }
         .data_point_value {
-            @apply text-sm text-white font-bold;
+            @apply text-white font-semibold;
             @apply inline-block;
+            font-size: 14px;
         }
         &.severity_red {
             .data_point_value {
@@ -82,12 +90,15 @@
             @apply mb-2;
             @apply flex items-center justify-between;
             .title {
-                @apply text-xs font-bold text-white uppercase;
+                @apply font-bold text-white uppercase;
+                font-size: 14px;
             }
         }
         .tag {
-            @apply inline-block rounded-full text-xs font-bold text-white uppercase;
-            padding: 2px 8px;
+            @apply inline-block rounded-full font-bold text-white uppercase;
+            font-size: 12px;
+            line-height: 12px;
+            padding: 4px 8px;
             text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
             &.severity_red {
                 background-color: var(--bbt-red);
@@ -104,15 +115,21 @@
     .player_banner {
         @apply flex items-center;
         .player_banner_avatar {
-            @apply overflow-clip rounded-md w-16 h-16 mr-4 border border-white shadow-sm;
+            width: 64px;
+            height: 64px;
+            @apply overflow-clip rounded-md mr-4 border border-white shadow-sm;
         }
         .player_banner_info {
             .player_name {
-                @apply text-3xl font-bold;
+                @apply font-semibold mb-2;
+                font-size: 32px;
+                line-height: 32px;
             }
             .player_steam_profile_url {
                 a {
-                    @apply text-sm text-blue-400 hover:underline;
+                    @apply text-blue-400 hover:underline;
+                    font-size: 14px;
+                    line-height: 14px;
                 }
             }
         }

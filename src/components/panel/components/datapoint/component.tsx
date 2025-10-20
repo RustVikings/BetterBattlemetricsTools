@@ -5,6 +5,7 @@ import classNames from "classnames";
 interface DataPointProps extends React.HTMLAttributes<HTMLDivElement> {
     label: string;
     value: string;
+    title?: string;
     severity?: "normal" | "warning" | "danger" | undefined;
     variant?: "default" | "inline";
 }
@@ -12,6 +13,7 @@ interface DataPointProps extends React.HTMLAttributes<HTMLDivElement> {
 export function DataPoint({
     label,
     value,
+    title,
     severity,
 }: DataPointProps): JSX.Element {
     return (
@@ -27,7 +29,9 @@ export function DataPoint({
             }
         >
             <div className={css.data_point_label}>{label}</div>
-            <div className={css.data_point_value}>{value}</div>
+            <div className={css.data_point_value} title={title}>
+                {value}
+            </div>
         </div>
     );
 }

@@ -1,1 +1,1 @@
-export { Panel } from "./component";
+export { Panel, PlayerProps, PlayerStats, PlayerContext } from "./component";

@@ -5,25 +5,83 @@ import React, {
     useState,
     useEffect,
 } from "react";
-import { getOptions } from "../../messaging/internal/getOptions";
+import { getSettings } from "../../messaging/internal/getSettings";
 import { getPlayerInfo } from "../../messaging/battlemetrics/getPlayerInfo";
 import { getPlayerSummaries } from "../../messaging/steam/getPlayerSummaries";
-import { getSteamProfile } from "../../messaging/battlemetrics/getSteamProfile";
 import css from "./styles.module.css";
 import { OrgServer } from "../options/component";
 import { PlayerBanner } from "./components/playerbanner/";
 import { CurrentServer } from "./components/currentserver/component";
 import { PlayerInfo } from "./components/playerinfo/component";
+import { getPlayerStats } from "@src/utils/getStats";
 
-interface PlayerProps {
-    id?: string;
-    steamID?: string;
+export interface BattlemetricsPlayerProfile {
+    data: {
+        type: string;
+        id: string;
+        attributes?: {
+            [key: string]: unknown;
+        };
+        relationships?: {
+            [key: string]: unknown;
+        };
+    };
+    included?: {
+        attributes: {
+            [key: string]: any;
+        };
+        id: string;
+        type: string;
+        relationships?: {
+            [key: string]: unknown;
+        };
+        meta?: { [key: string]: unknown };
+    }[];
 }
 
-interface SteamProfileProps {
-    avatar?: string;
-    personaname?: string;
-    profileurl?: string;
+export interface PlayerActivity {
+    data: {
+        attributes: {
+            [key: string]: any;
+        };
+        id: string;
+        type: string;
+        relationships?: {
+            [key: string]: unknown;
+        };
+    }[];
+    included?: {
+        attributes: {
+            [key: string]: any;
+        };
+        id: string;
+        type: string;
+        relationships?: {
+            [key: string]: unknown;
+        };
+    };
+}
+
+export interface PlayerStats {
+    kills: number;
+    deaths: number;
+    kills24h: number;
+    deaths24h: number;
+    reports: {
+        cheat: number;
+        cheat24h: number;
+        teaming: number;
+        teaming24h: number;
+        other: number;
+        other24h: number;
+    };
+}
+
+export interface PlayerProps {
+    id?: string;
+    steamID?: string;
+    playerProfile?: BattlemetricsPlayerProfile;
+    playerStats?: PlayerStats;
 }
 
 interface OptionsProps {
@@ -32,40 +90,41 @@ interface OptionsProps {
     orgServers: OrgServer[];
 }
 
-type DataContextType = {
-    options: OptionsProps;
-    setOptions: React.Dispatch<React.SetStateAction<OptionsProps>>;
-    playerData: PlayerProps;
-    setPlayerData: React.Dispatch<React.SetStateAction<PlayerProps>>;
-};
-
-const DataContext = createContext<DataContextType | undefined>(undefined);
+export const OptionsContext = createContext<OptionsProps | undefined>(
+    undefined,
+);
+export const PlayerContext = createContext<PlayerProps | undefined>(undefined);
 
 export function Panel(): JSX.Element {
+    // Get the player ID from the URL
     const currentPageURL = window.location.href;
     const urlMatches = currentPageURL.matchAll(
         /http[s]*:\/\/www.battlemetrics.com\/rcon\/players\/(\d+)/g,
     );
     const playerId = urlMatches?.next().value?.[1] || undefined;
 
+    // Default state for options
     const defaultOptions: OptionsProps = {
         battlemetricsApiToken: "",
         steamApiKey: "",
         orgServers: [],
     };
-
+    // Default state for player
     const defaultPlayer: PlayerProps = {
         id: playerId,
         steamID: undefined,
+        playerProfile: undefined,
+        playerStats: undefined,
     };
 
+    // State hooks for options and player data
     const [options, setOptions] = useState<OptionsProps>(defaultOptions);
     const [playerData, setPlayerData] = useState<PlayerProps>(defaultPlayer);
 
-    /*  useEffect(() => {
+    useEffect(() => {
         async function fetchOptions() {
             try {
-                const response = await getOptions(null);
+                const response = await getSettings(null);
                 const options = response.Options;
                 if (options) {
                     setOptions({
@@ -88,34 +147,39 @@ export function Panel(): JSX.Element {
             }
         }
         fetchOptions();
-    }, []); */
+    }, []);
 
-    /* useEffect(() => {
+    useEffect(() => {
         async function fetchPlayer() {
             if (options.battlemetricsApiToken && playerData?.id) {
-                console.log(
-                    "Panel: fetching player",
-                    playerData.id,
-                    options.battlemetricsApiToken,
-                );
                 try {
                     const response = await getPlayerInfo({
                         battlemetricsApiToken: options.battlemetricsApiToken,
                         playerId: playerData.id,
                     });
                     const player = response.player;
-                    console.log("Panel: fetched player", player);
+                    const activity = response.activity;
+                    const stats = getPlayerStats(activity, playerId);
+                    console.log("Panel: playerStats", stats);
                     if (player) {
-                        console.log("Panel: playerRecord", player);
+                        // console.log("Panel: playerRecord", player);
                         setPlayerData((prevData) => ({
                             ...prevData,
                             id: playerId,
-                            steamID: player as string,
+                            steamID: player.included?.find(
+                                (item: any) =>
+                                    item.type === "identifier" &&
+                                    item.attributes?.type === "steamID",
+                            )?.attributes.value,
+                            playerProfile: player,
+                            playerStats: stats,
                         }));
                     } else {
                         setPlayerData((prevData) => ({
                             ...prevData,
                             steamId: undefined,
+                            playerProfile: undefined,
+                            playerStats: undefined,
                         }));
                     }
                 } catch (e) {
@@ -128,42 +192,17 @@ export function Panel(): JSX.Element {
             }
         }
         fetchPlayer();
-    }, [options.battlemetricsApiToken, playerData.id]); */
-
-    /* useEffect(() => {
-        async function fetchSteamPlayer() {
-            if (options.steamApiKey && playerData?.steamID) {
-                console.log(
-                    "Panel: fetching steam player",
-                    playerData.steamID,
-                    options.steamApiKey,
-                );
-                try {
-                    const response = await getPlayerSummaries({
-                        steamApiKey: options.steamApiKey,
-                        steamID: playerData.steamID,
-                    });
-                    const steamPlayer = response.player;
-                    console.log("Panel: fetched steam player", steamPlayer);
-                    if (steamPlayer) {
-                        console.log("Panel: steamPlayerRecord", steamPlayer);
-                        // You can update playerData with more Steam info if needed
-                    }
-                } catch (e) {
-                    // Handle error if needed
-                }
-            }
-        }
-        fetchSteamPlayer();
-    }, [options.steamApiKey, playerData.steamID]); */
+    }, [options.battlemetricsApiToken, playerData.id]);
 
     return (
-        <DataContext value={{ options, setOptions, playerData, setPlayerData }}>
-            <div className={css.box}>
-                <PlayerBanner />
-                <CurrentServer />
-                <PlayerInfo />
-            </div>
-        </DataContext>
+        <OptionsContext.Provider value={options}>
+            <PlayerContext.Provider value={playerData}>
+                <div className={css.box}>
+                    <PlayerBanner />
+                    <CurrentServer />
+                    <PlayerInfo />
+                </div>
+            </PlayerContext.Provider>
+        </OptionsContext.Provider>
     );
 }

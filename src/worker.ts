@@ -2,13 +2,21 @@ import { getPlayerInfo } from "./apis/battlemetrics/getPlayerInfo";
 import { getUserServers } from "./apis/battlemetrics/getUserServers";
 import { getSteamProfile } from "./apis/battlemetrics/getSteamProfile";
 import { onGetSteamProfile } from "./messaging/battlemetrics/getSteamProfile";
-import { onGetOptions } from "./messaging/internal/getOptions";
+import { onGetSettings } from "./messaging/internal/getSettings";
 import { onGetPlayerInfo } from "./messaging/battlemetrics/getPlayerInfo";
 import { onGetServers } from "./messaging/battlemetrics/getServers";
 import Browser from "webextension-polyfill";
+import { onGetPlayerSummaries } from "./messaging/steam/getPlayerSummaries";
+import { getPlayerSummaries } from "./apis/steam/getPlayerSummaries";
+import { getPlayerActivity } from "./apis/battlemetrics/getPlayerActivity";
 
+// Handle extension installation,
+// try to load settings
+// and open options page if no settings found
 Browser.runtime.onInstalled.addListener(() => {
-    let SETTINGS;
+    const SETTINGS = async function loadSettings() {
+        return Browser.storage.local.get();
+    };
 
     if (!SETTINGS) {
         Browser.runtime.openOptionsPage();
@@ -16,44 +24,43 @@ Browser.runtime.onInstalled.addListener(() => {
     }
 });
 
+// Listen for navigation events to detect page changes and render the panel
 Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
-    console.log("webNavigation onCompleted:", details);
     Browser.tabs.sendMessage(details.tabId, {
-        action: "renderPanel",
+        action: "render-player-panel",
         details,
     });
 });
 
+// Also listen for completed navigation events and render the panel
 Browser.webNavigation.onCompleted.addListener((details) => {
-    console.log("webNavigation onCompleted:", details);
     Browser.tabs.sendMessage(details.tabId, {
-        action: "renderPanel",
+        action: "render-player-panel",
         details,
     });
 });
 
-onGetOptions(async (sendResponse: CallableFunction) => {
+// Handle getSettings message
+onGetSettings(async (sendResponse: CallableFunction) => {
     try {
         const options = await Browser.storage.local.get();
-        console.log("worker: options fetched", options);
         return sendResponse({
             Options: options,
         });
     } catch (error) {
-        console.error("Error fetching options:", error);
         return sendResponse({
             Options: null,
         });
     }
 });
 
+// Handle getServers message
 onGetServers(
     async (
         sendResponse: CallableFunction,
         getServersArgs: { battlemetricsApiToken: string },
     ) => {
         try {
-            console.log("worker: getUserServers called", getServersArgs);
             const response = (await getUserServers(
                 getServersArgs.battlemetricsApiToken,
             )) as { servers: Record<string, unknown> };
@@ -61,7 +68,6 @@ onGetServers(
                 servers: response.servers,
             });
         } catch (error) {
-            console.error("Error fetching servers:", error);
             return sendResponse({
                 servers: null,
             });
@@ -69,6 +75,7 @@ onGetServers(
     },
 );
 
+// Handle getPlayerInfo message
 onGetPlayerInfo(
     async (
         sendResponse: CallableFunction,
@@ -78,38 +85,45 @@ onGetPlayerInfo(
         },
     ) => {
         try {
-            const response = (await getPlayerInfo(
+            const playerInfo = (await getPlayerInfo(
                 getPlayerInfoArgs.battlemetricsApiToken,
                 getPlayerInfoArgs.playerId,
-            )) as { steamID: string };
+            )) as { player: string };
+            console.log("worker: playerInfo", playerInfo);
+            const playerActivity = (await getPlayerActivity(
+                getPlayerInfoArgs.battlemetricsApiToken,
+                getPlayerInfoArgs.playerId,
+            )) as { activity: string };
+            console.log("worker: playerActivity", playerActivity);
             return sendResponse({
-                player: response.steamID,
+                player: playerInfo.player,
+                activity: playerActivity?.activity,
             });
         } catch (error) {
-            console.error("Error fetching player:", error);
             return sendResponse({
                 player: null,
+                activity: null,
             });
         }
     },
 );
-onGetSteamProfile(
+
+onGetPlayerSummaries(
     async (
         sendResponse: CallableFunction,
-        getSteamProfileArgs: { steamID: string; steamApiKey: string },
+        getPlayerSummariesArgs: { steamApiKey: string; steamID: string },
     ) => {
         try {
-            const response = (await getSteamProfile(
-                getSteamProfileArgs.steamID,
-                getSteamProfileArgs.steamApiKey,
-            )) as unknown as { profile: Record<string, unknown> };
+            const profile = await getPlayerSummaries(
+                getPlayerSummariesArgs.steamApiKey,
+                getPlayerSummariesArgs.steamID,
+            );
             return sendResponse({
-                profile: response.profile,
+                player: profile,
             });
         } catch (error) {
-            console.error("Error fetching Steam profile:", error);
             return sendResponse({
-                profile: null,
+                player: null,
             });
         }
     },

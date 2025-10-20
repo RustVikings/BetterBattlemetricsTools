@@ -1,10 +1,9 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./components/app";
 import { Panel } from "./components/panel/component";
 import "./css/app.css";
 import Browser from "webextension-polyfill";
 
+// Utility function to wait for an element to appear in the DOM
 function waitForElement(
     selector: string,
     callback: (element: Element) => void,
@@ -15,20 +14,21 @@ function waitForElement(
             clearInterval(interval);
             callback(element);
         }
-        console.log("Waiting for element:", selector);
-    }, 500);
+    }, 100);
 }
 
+// Listen for messages from the background script
 Browser.runtime.onMessage.addListener((message: any) => {
-    if (message.action === "renderPanel") {
+    if (message.action === "render-player-panel") {
         waitForElement("#RCONPlayerPage", (element: Element) => {
+            // Check if the extension element already exists
             const extensionElement = document.getElementById("BRT");
             if (extensionElement) {
-                console.log("Element .BRT already exists: rendering Panel");
+                // If it exists, just render the Panel into it
                 const root = createRoot(extensionElement);
                 root.render(<Panel />);
             } else {
-                console.log("Creating and rendering .BRT element");
+                // If it doesn't exist, create it and then render the Panel
                 const div = document.createElement("div");
                 div.id = "BRT";
                 element.prepend(div);

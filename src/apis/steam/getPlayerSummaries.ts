@@ -7,5 +7,5 @@ export async function getPlayerSummaries(
     );
     const steamPlayer = await response.json();
     console.log("getPlayerSummaries: steamPlayer", steamPlayer);
-    return steamPlayer;
+    return steamPlayer.response.players[0];
 }

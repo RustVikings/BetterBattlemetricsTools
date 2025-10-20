@@ -1,0 +1,1 @@
+export { CurrentServer } from "./component";

@@ -1,4 +1,4 @@
-import React, { JSX, MouseEvent, use } from "react";
+import React, { JSX, useContext } from "react";
 import { Tag } from "../tag";
 import {
     Chart as ChartJS,
@@ -30,9 +30,9 @@ ChartJS.register(
 
 import classNames from "classnames";
 import css from "../../styles.module.css";
-import { Point } from "chart.js/dist/core/core.controller";
 import { Font } from "chartjs-plugin-datalabels/types/options";
 import Browser from "webextension-polyfill";
+import { PlayerContext } from "../..";
 
 const icons = [new Image(12, 12), new Image(12, 12)];
 icons[0].src = Browser.runtime.getURL("icons/kill.svg");
@@ -48,6 +48,7 @@ export const options = {
             display: false,
         },
     },
+    minBarLength: 32,
     plugins: {
         datalabels: {
             color: "white",
@@ -74,57 +75,79 @@ export const options = {
     },
 };
 
-const labels = [""];
+interface KillDeathRatioProps {
+    title?: string;
+    kdRatio?: number;
+    period?: "24h" | "total";
+}
 
-export const data = {
-    labels,
-    datasets: [
-        {
-            label: "Kills",
-            data: [234],
-            backgroundColor: "#548933",
-            borderRadius: {
-                topLeft: 4,
-                topRight: 4,
-            },
-            legend: {
-                usePointStyle: true,
-                pointStyle: icons[0],
-            },
-        },
-        {
-            label: "Deaths",
-            data: [587],
-            backgroundColor: "#AA3333",
-            borderRadius: {
-                topLeft: 4,
-                topRight: 4,
-            },
-            legend: {
-                usePointStyle: true,
-                pointStyle: icons[1],
-            },
-        },
-    ],
+const kdRatioSeverity = (kdRatio: number) => {
+    const kd = parseFloat(kdRatio);
+    switch (true) {
+        case kd > 1.5:
+            return "danger";
+        case kd > 1 && kd <= 1.5:
+            return "warning";
+        default:
+            return "normal";
+    }
 };
 
-export function KillDeathRatio(): JSX.Element {
+export function KillDeathRatio({
+    title,
+    kdRatio,
+    period,
+}: KillDeathRatioProps): JSX.Element {
+    const player = useContext(PlayerContext);
+    const stats = player?.playerStats;
+    const labels = [""];
+
+    const data = {
+        labels,
+        datasets: [
+            {
+                label: "Kills",
+                data: [period === "24h" ? stats?.kills24h : stats?.kills || 0],
+                backgroundColor: "#8E8E8E",
+                borderRadius: {
+                    topLeft: 4,
+                    topRight: 4,
+                },
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: icons[0],
+                    },
+                },
+            },
+            {
+                label: "Deaths",
+                data: [
+                    period === "24h" ? stats?.deaths24h : stats?.deaths || 0,
+                ],
+                backgroundColor: "#3C3C3C",
+                borderRadius: {
+                    topLeft: 4,
+                    topRight: 4,
+                },
+                legend: {
+                    usePointStyle: true,
+                    pointStyle: icons[1],
+                },
+            },
+        ],
+    };
+
     return (
-        <div className={classNames(css.cols_2)}>
-            <div className={classNames(css.widget)}>
-                <div className={css.heading}>
-                    <div className={css.title}>Last 24 hours</div>
-                    <Tag value="K/D 1.0" severity="normal" />
-                </div>
-                <Bar options={options} data={data} />
+        <div className={classNames(css.widget)}>
+            <div className={css.heading}>
+                <div className={css.title}>{title}</div>
+                <Tag
+                    value={`K/D ${kdRatio}`}
+                    severity={kdRatioSeverity(kdRatio as number)}
+                />
             </div>
-            <div className={classNames(css.widget)}>
-                <div className={css.heading}>
-                    <div className={css.title}>Total</div>
-                    <Tag value="K/D 1.0" severity="danger" />
-                </div>
-                <Bar options={options} data={data} />
-            </div>
+            <Bar options={options} data={data} />
         </div>
     );
 }
