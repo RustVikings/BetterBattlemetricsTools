@@ -1,4 +1,7 @@
-export async function getPlayerSummaries(
+import { Player, PlayerProfile } from "@src/types";
+import { SteamPlayerProfile } from "@src/types/steam";
+
+export async function getSteamPlayerSummaries(
     steamApiKey: string,
     steamID: string,
 ): Promise<unknown> {
@@ -6,6 +9,30 @@ export async function getPlayerSummaries(
         `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamApiKey}&steamids=${steamID}`,
     );
     const steamPlayer = await response.json();
-    console.log("getPlayerSummaries: steamPlayer", steamPlayer);
-    return steamPlayer.response.players[0];
+
+    const Player: Player = {} as Player;
+    Player.profile = {
+        steam: {
+            avatar: "",
+            avatarfull: "",
+            avatarhash: "",
+            avatarmedium: "",
+            communityvisibilitystate: 1,
+            lastlogoff: 0,
+            personaname: "",
+            personastate: 0,
+            profilestate: undefined,
+            profileurl: "",
+            steamid: "",
+            timecreated: 0,
+        },
+    } as PlayerProfile;
+
+    Player.profile.steam = {
+        ...steamPlayer.response.players[0],
+    } as SteamPlayerProfile;
+
+    return {
+        player: Player,
+    };
 }

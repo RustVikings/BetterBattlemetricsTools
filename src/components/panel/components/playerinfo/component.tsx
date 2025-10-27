@@ -1,27 +1,20 @@
-import React, { JSX, useContext } from "react";
 import { DataPoint } from "../datapoint";
-import css from "../../styles.module.css";
+import { LoadingState, Player, Options } from "@src/types";
+import { PlayerContext, LoadingContext, OptionsContext } from "../../component";
+import { Playtime } from "../playtime/component";
 import classNames from "classnames";
-import { Playtime } from "../playtime";
+import css from "../../styles.module.css";
 import moment from "moment";
-import { PlayerProps, PlayerStats, PlayerContext } from "../../component";
+import React, { JSX, useContext } from "react";
 
 export function PlayerInfo(): JSX.Element {
-    const player = useContext(PlayerContext) as PlayerProps | undefined;
-    const profile = player?.playerProfile;
-    const battlemetricsProfile = profile?.data?.attributes;
-
-    // console.log("PlayerInfo: id", player?.id);
-
-    const steamIdentifier = profile?.included?.find(
-        (item) =>
-            item.type === "identifier" && item.attributes?.type === "steamID",
-    );
-    const steamProfile = steamIdentifier?.attributes?.metadata;
-
-    const stats = player?.playerStats as PlayerStats;
-
-    console.log("PlayerInfo: stats", stats);
+    const Player = useContext(PlayerContext) as Player;
+    const Loading = useContext(LoadingContext) as LoadingState;
+    const Options = useContext(OptionsContext) as Options;
+    const steamProfile = Player.profile.steam;
+    const battlemetricsProfile = Player.profile.battlemetrics;
+    const reports = Player.stats.reports;
+    const anticheat = Player.stats.anticheat;
 
     const reportsSeverity = (reportCount: number) => {
         switch (true) {
@@ -35,18 +28,21 @@ export function PlayerInfo(): JSX.Element {
     };
 
     return (
-        <div className={classNames(css.section, css.cols_4)}>
+        <div className={classNames(css.section, css.cols_6)}>
             <div>
+                {/* Steam and Battlemetrics profiles age and status */}
                 <DataPoint
                     label="Steam profile visibility"
                     value={
-                        steamProfile?.profile.personastate === 3
+                        Loading.steamProfile
+                            ? "Loading..."
+                            : steamProfile?.communityvisibilitystate === 3
                             ? "Public"
                             : "Private"
                     }
                     className={css.data_point}
                     severity={
-                        steamProfile?.profile.personastate === 3
+                        steamProfile?.communityvisibilitystate === 3
                             ? "normal"
                             : "danger"
                     }
@@ -54,80 +50,143 @@ export function PlayerInfo(): JSX.Element {
                 <DataPoint
                     label="Steam account age"
                     value={
-                        steamProfile?.profile.timecreated
-                            ? moment
-                                  .unix(steamProfile?.profile.timecreated)
+                        Loading.steamProfile
+                            ? "Loading..."
+                            : moment
+                                  .unix(steamProfile?.timecreated)
                                   .format("MMM DD, YYYY") +
                               " (" +
                               moment
-                                  .unix(steamProfile?.profile.timecreated)
+                                  .unix(steamProfile?.timecreated)
                                   .fromNow(true) +
                               ")"
-                            : "Loading..."
                     }
                     title={`Account created: ${moment(
                         battlemetricsProfile?.createdAt as Date,
                     ).format("LLLL")}`}
                 />
                 <DataPoint
-                    label="First seen on Battlemetrics"
+                    label="Battlemetrics profile age"
                     value={
-                        moment(battlemetricsProfile?.createdAt as Date).format(
-                            "MMM DD, YYYY",
-                        ) +
-                        " (" +
-                        moment(battlemetricsProfile?.createdAt as Date).fromNow(
-                            true,
-                        ) +
-                        ")"
+                        Loading.playerInfo
+                            ? "Loading..."
+                            : moment(battlemetricsProfile?.createdAt).format(
+                                  "MMM DD, YYYY",
+                              ) +
+                              " (" +
+                              moment(battlemetricsProfile?.createdAt).fromNow(
+                                  true,
+                              ) +
+                              ")"
                     }
                     title={`Joined: ${moment(
-                        battlemetricsProfile?.createdAt as Date,
+                        battlemetricsProfile.createdAt as Date,
                     ).format("LLLL")}`}
                 />
             </div>
             <div>
+                {/* reports */}
                 <DataPoint
                     label="Cheating Reports"
-                    value={`${stats?.reports.cheat || 0} (${
-                        stats?.reports.cheat24h || 0
-                    } last 24h)`}
-                    severity={reportsSeverity(stats?.reports.cheat || 0)}
+                    value={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : `${reports.cheat} (${reports.cheat_24h} last 24h)`
+                    }
+                    severity={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : reportsSeverity(reports.cheat)
+                    }
                 />
                 <DataPoint
                     label="Teaming Reports"
-                    value={`${stats?.reports.teaming || 0} (${
-                        stats?.reports.teaming24h || 0
-                    } last 24h)`}
-                    severity={reportsSeverity(stats?.reports.teaming || 0)}
+                    value={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : `${reports.teaming} (${reports.teaming_24h} last 24h)`
+                    }
+                    severity={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : reportsSeverity(reports.teaming)
+                    }
                 />
-
                 <DataPoint
                     label="Other Reports"
-                    value={`${stats?.reports.other || 0} (${
-                        stats?.reports.other24h || 0
-                    } last 24h)`}
-                    severity={reportsSeverity(stats?.reports.other || 0)}
+                    value={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : `${reports.other} (${reports.other_24h} last 24h)`
+                    }
+                    severity={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : reportsSeverity(reports.other)
+                    }
                 />
             </div>
-            <div>
-                <DataPoint
-                    label="EAC Banned IPs"
-                    value="0"
-                    className={css.data_point}
-                    severity="normal"
-                />
-                <DataPoint
-                    label="Battlemetrics Banned IPs"
-                    value="0"
-                    severity="normal"
-                />
-                <DataPoint
-                    label="First seen on Battlemetrics"
-                    value="5 years ago"
-                />
-            </div>
-            <div className="col-span-3">
+            {Options.arkan ? (
+                <div>
+                    <DataPoint
+                        label="Arkan [no-recoil] warnings"
+                        value={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : `${anticheat.arkan.no_recoil} (${anticheat.arkan.no_recoil_24h} last 24h)`
+                        }
+                        severity={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : reportsSeverity(anticheat.arkan.no_recoil)
+                        }
+                    />
+                    <DataPoint
+                        label="Arkan [aimbot] warnings"
+                        value={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : `${anticheat.arkan.aimbot} (${anticheat.arkan.aimbot_24h} last 24h)`
+                        }
+                        severity={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : reportsSeverity(anticheat.arkan.aimbot)
+                        }
+                    />
+                </div>
+            ) : null}
+            {Options.guardian ? (
+                <div>
+                    <DataPoint
+                        label="Guardian [cheating] warnings"
+                        value={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : `${anticheat.guardian.cheat} (${anticheat.guardian.cheat_24h} last 24h)`
+                        }
+                        severity={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : reportsSeverity(anticheat.guardian.cheat)
+                        }
+                    />
+                    <DataPoint
+                        label="Guardian [anti-flood] warnings"
+                        value={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : `${anticheat.guardian.antiflood} (${anticheat.guardian.antiflood_24h} last 24h)`
+                        }
+                        severity={
+                            Loading.playerActivity
+                                ? "Loading..."
+                                : reportsSeverity(anticheat.guardian.antiflood)
+                        }
+                    />
+                </div>
+            ) : null}
+            <div className="col-span-2">
                 <Playtime />
             </div>
         </div>

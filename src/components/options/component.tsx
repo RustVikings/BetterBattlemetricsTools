@@ -12,103 +12,44 @@ import { Spinner } from "./components/spinner";
 import css from "./styles.module.css";
 import Browser = require("webextension-polyfill");
 import { getServers } from "../../messaging/battlemetrics/getServers";
-import { getSettings } from "../../messaging/internal/getSettings";
+import { getOptions } from "../../messaging/internal/getOptions";
 import version from "../../manifest.json";
-import { get } from "http";
-
-export interface OrgServer {
-    checked: boolean;
-    server: Record<string, unknown>;
-}
-
-export interface OptionsProps {
-    arkanLink: boolean;
-    battlemetricsApiToken: string;
-    battlemetricsApiTokenIsValid?: boolean;
-    guardianLink: boolean;
-    rustAdminLink: boolean;
-    rustStatsLink: boolean;
-    serverArmourLink: boolean;
-    steamApiKey: string;
-    steamApiKeyIsValid?: boolean;
-    saveEnabled?: boolean;
-    orgServers: OrgServer[];
-    refreshingServers?: boolean;
-    saveButtonText?: string;
-}
+import { Options, OwnServer } from "@src/types";
 
 export function Options(): JSX.Element {
-    const defaultOptions: OptionsProps = {
-        arkanLink: true,
+    const defaultOptions: Options = {
+        arkan: true,
         battlemetricsApiToken: "",
-        guardianLink: true,
-        rustAdminLink: true,
-        rustStatsLink: true,
-        serverArmourLink: true,
+        guardian: true,
+        rustAdmin: true,
+        rustStats: true,
+        serverArmour: true,
         steamApiKey: "",
         saveEnabled: false,
-        orgServers: [],
+        ownServers: [],
         saveButtonText: "Save options",
         refreshingServers: false,
     };
 
-    const [formData, setFormData] = useState<OptionsProps>(defaultOptions);
+    const [formData, setFormData] = useState<Options>(defaultOptions);
 
     useEffect(() => {
         async function fetchOptions() {
             try {
-                const response = await getSettings(null);
-                const options = response.Options;
-                if (options) {
-                    setFormData({
-                        arkanLink:
-                            typeof options?.arkanLink === "boolean"
-                                ? options.arkanLink
-                                : true,
-                        battlemetricsApiToken:
-                            typeof options?.battlemetricsApiToken === "string"
-                                ? options.battlemetricsApiToken
-                                : "",
-                        battlemetricsApiTokenIsValid:
-                            typeof options?.battlemetricsApiToken ===
-                                "string" &&
-                            options.battlemetricsApiToken.length > 0
-                                ? true
-                                : false,
-                        guardianLink:
-                            typeof options?.guardianLink === "boolean"
-                                ? options.guardianLink
-                                : true,
-                        rustAdminLink:
-                            typeof options?.rustAdminLink === "boolean"
-                                ? options.rustAdminLink
-                                : true,
-                        rustStatsLink:
-                            typeof options?.rustStatsLink === "boolean"
-                                ? options.rustStatsLink
-                                : true,
-                        serverArmourLink:
-                            typeof options?.serverArmourLink === "boolean"
-                                ? options.serverArmourLink
-                                : true,
-                        steamApiKey:
-                            typeof options?.steamApiKey === "string"
-                                ? options.steamApiKey
-                                : "",
-                        steamApiKeyIsValid:
-                            typeof options?.steamApiKey === "string" &&
-                            options.steamApiKey.length > 0
-                                ? true
-                                : false,
-                        saveEnabled: false,
-                        orgServers: Array.isArray(options?.orgServers)
-                            ? options.orgServers
-                            : [],
-                        saveButtonText: "Options loaded",
-                        refreshingServers: false,
-                    });
+                const Options = (await Browser.storage.local.get()) as Options;
+                console.log("loading options from local storage", Options);
+                if (Options !== null && Options !== undefined) {
+                    if (
+                        !Options.battlemetricsApiToken ||
+                        !Options.steamApiKey
+                    ) {
+                        setFormData(defaultOptions);
+                    } else {
+                        setFormData(Options);
+                    }
                 }
             } catch (e) {
+                console.error("Error loading options from local storage", e);
                 // fallback to defaultOptions
                 setFormData(defaultOptions);
             }
@@ -198,7 +139,7 @@ export function Options(): JSX.Element {
                 "battlemetricsApiToken",
                 formData.battlemetricsApiToken,
             ) &&
-            formData.orgServers.length === 0
+            formData.ownServers.length === 0
         ) {
             getUserServers();
         }
@@ -212,8 +153,6 @@ export function Options(): JSX.Element {
             }));
         }
     }, [formData.steamApiKey]);
-
-    // console.log("render:formData", formData);
 
     useEffect(() => {
         if (
@@ -233,13 +172,13 @@ export function Options(): JSX.Element {
     const handleServerSelection = (e: ChangeEvent<HTMLInputElement>) => {
         const { id } = e.target;
         const sid = parseInt(id.substring(1));
-        const newState: OptionsProps = { ...formData };
-        if (newState.orgServers && newState.orgServers[sid]) {
-            newState.orgServers[sid].checked =
-                !newState.orgServers[sid].checked;
+        const newState: Options = { ...formData };
+        if (newState.ownServers && newState.ownServers[sid]) {
+            newState.ownServers[sid].checked =
+                !newState.ownServers[sid].checked;
             setFormData(newState);
         }
-        console.log("Toggling server selection");
+
         setFormData((prevState) => ({
             ...prevState,
             saveButtonText: "Save options",
@@ -272,30 +211,26 @@ export function Options(): JSX.Element {
             const servers = response.servers;
             if (response.servers) {
                 const newState = { ...formData };
-                const orgServers = [];
+                const ownServers: OwnServer[] = [];
                 for (const [key, value] of Object.entries(servers)) {
-                    const server = value as {
-                        id: string;
-                        attributes: { name: string; ip: string; port: number };
-                    };
-                    orgServers.push({
+                    ownServers.push({
                         checked: true,
                         server: {
-                            name: server.attributes.name,
-                            id: server.id,
-                            ip: server.attributes.ip,
-                            port: server.attributes.port,
+                            id: value.server.id,
+                            ip: value.server.ip,
+                            port: value.server.port,
+                            name: value.server.name,
                         },
                     });
                 }
-                newState["orgServers"] = orgServers;
+                newState["ownServers"] = ownServers;
                 newState["battlemetricsApiTokenIsValid"] = true;
                 newState["refreshingServers"] = false;
                 newState["saveButtonText"] = "Save options";
                 setFormData(newState);
             } else {
                 const newState = { ...formData };
-                newState["orgServers"] = [];
+                newState["ownServers"] = [];
                 newState["battlemetricsApiTokenIsValid"] = false;
                 newState["refreshingServers"] = false;
                 setFormData(newState);
@@ -353,49 +288,49 @@ export function Options(): JSX.Element {
                     <legend>Links</legend>
                     <Switch
                         showLink={true}
-                        name="arkanLink"
+                        name="arkan"
                         label="Arkan violations"
                         onChange={handleOnChange}
                         href="https://umod.org/plugins/arkan"
-                        checked={formData.arkanLink}
+                        checked={formData.arkan}
                     />
                     <Switch
                         showLink={true}
-                        name="guardianLink"
+                        name="guardian"
                         label="Guardian violations"
                         onChange={handleOnChange}
                         href="https://umod.org/plugins/guardian"
-                        checked={formData.guardianLink}
+                        checked={formData.guardian}
                     />
                     <Switch
                         showLink={true}
-                        name="rustAdminLink"
+                        name="rustAdmin"
                         label="RustAdmin shared bans"
                         onChange={handleOnChange}
                         href="https://www.rustadmin.com/"
-                        checked={formData.rustAdminLink}
+                        checked={formData.rustAdmin}
                     />
                     <Switch
                         showLink={true}
-                        name="serverArmourLink"
+                        name="serverArmour"
                         label="Server Armour"
                         onChange={handleOnChange}
                         href="https://serverarmour.com/home"
-                        checked={formData.serverArmourLink}
+                        checked={formData.serverArmour}
                     />
                     <Switch
                         showLink={true}
-                        name="rustStatsLink"
+                        name="rustStats"
                         label="ruststats.io"
                         onChange={handleOnChange}
                         href="https://ruststats.io/"
-                        checked={formData.rustStatsLink}
+                        checked={formData.rustStats}
                     />
                 </fieldset>
                 {/* render server list when available */}
-                {formData.orgServers ? (
+                {formData.ownServers ? (
                     <Servers
-                        serverList={formData.orgServers}
+                        serverList={formData.ownServers}
                         onChange={handleServerSelection}
                         refreshingServers={formData.refreshingServers}
                         onClick={handleRefreshServers}

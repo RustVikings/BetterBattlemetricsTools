@@ -1,27 +1,39 @@
-import { getPlayerInfo } from "./apis/battlemetrics/getPlayerInfo";
-import { getUserServers } from "./apis/battlemetrics/getUserServers";
-import { getSteamProfile } from "./apis/battlemetrics/getSteamProfile";
-import { onGetSteamProfile } from "./messaging/battlemetrics/getSteamProfile";
-import { onGetSettings } from "./messaging/internal/getSettings";
-import { onGetPlayerInfo } from "./messaging/battlemetrics/getPlayerInfo";
-import { onGetServers } from "./messaging/battlemetrics/getServers";
+import { getPlayerInfo } from "./apis/battlemetrics/";
+import { getUserServers } from "./apis/battlemetrics/";
+import { getPlayerActivity } from "./apis/battlemetrics/";
+import { onGetPlayerActivity } from "./messaging/battlemetrics/";
+import { onGetPlayerInfo } from "./messaging/battlemetrics/";
+import { onGetServers } from "./messaging/battlemetrics/";
+import {
+    getSteamKillsDeaths,
+    getSteamPlayerSummaries,
+    getSteamPlaytime,
+} from "./apis/steam/";
+import {
+    onGetPlayerSummaries,
+    onGetSteamKillsDeaths,
+    onGetSteamPlaytime,
+} from "./messaging/steam/";
+import { OwnServer } from "./types";
 import Browser from "webextension-polyfill";
-import { onGetPlayerSummaries } from "./messaging/steam/getPlayerSummaries";
-import { getPlayerSummaries } from "./apis/steam/getPlayerSummaries";
-import { getPlayerActivity } from "./apis/battlemetrics/getPlayerActivity";
+import { get } from "http";
 
 // Handle extension installation,
 // try to load settings
 // and open options page if no settings found
 Browser.runtime.onInstalled.addListener(() => {
-    const SETTINGS = async function loadSettings() {
-        return Browser.storage.local.get();
-    };
-
-    if (!SETTINGS) {
-        Browser.runtime.openOptionsPage();
-    } else {
+    async function loadSettings() {
+        await Browser.storage.local.get().then((options) => {
+            if (
+                !options.battlemetricsApiToken ||
+                !options.steamApiKey ||
+                !options.ownServers
+            ) {
+                Browser.runtime.openOptionsPage();
+            }
+        });
     }
+    loadSettings();
 });
 
 // Listen for navigation events to detect page changes and render the panel
@@ -40,20 +52,6 @@ Browser.webNavigation.onCompleted.addListener((details) => {
     });
 });
 
-// Handle getSettings message
-onGetSettings(async (sendResponse: CallableFunction) => {
-    try {
-        const options = await Browser.storage.local.get();
-        return sendResponse({
-            Options: options,
-        });
-    } catch (error) {
-        return sendResponse({
-            Options: null,
-        });
-    }
-});
-
 // Handle getServers message
 onGetServers(
     async (
@@ -69,7 +67,7 @@ onGetServers(
             });
         } catch (error) {
             return sendResponse({
-                servers: null,
+                servers: undefined,
             });
         }
     },
@@ -82,27 +80,50 @@ onGetPlayerInfo(
         getPlayerInfoArgs: {
             battlemetricsApiToken: string;
             playerId: string;
+            ownServers: OwnServer[];
         },
     ) => {
         try {
-            const playerInfo = (await getPlayerInfo(
+            const Player = (await getPlayerInfo(
                 getPlayerInfoArgs.battlemetricsApiToken,
                 getPlayerInfoArgs.playerId,
-            )) as { player: string };
-            console.log("worker: playerInfo", playerInfo);
-            const playerActivity = (await getPlayerActivity(
-                getPlayerInfoArgs.battlemetricsApiToken,
-                getPlayerInfoArgs.playerId,
-            )) as { activity: string };
-            console.log("worker: playerActivity", playerActivity);
+                getPlayerInfoArgs.ownServers,
+            )) as { player: typeof Player };
             return sendResponse({
-                player: playerInfo.player,
-                activity: playerActivity?.activity,
+                Player,
             });
         } catch (error) {
             return sendResponse({
-                player: null,
-                activity: null,
+                undefined,
+            });
+        }
+    },
+);
+
+onGetPlayerActivity(
+    async (
+        sendResponse: CallableFunction,
+        getPlayerActivityArgs: {
+            battlemetricsApiToken: string;
+            playerId: string;
+            arkanWarnings: boolean;
+            guardianWarnings: boolean;
+        },
+    ) => {
+        try {
+            const Player = (await getPlayerActivity(
+                getPlayerActivityArgs.battlemetricsApiToken,
+                getPlayerActivityArgs.playerId,
+                getPlayerActivityArgs.arkanWarnings,
+                getPlayerActivityArgs.guardianWarnings,
+            )) as { activity: typeof Player };
+
+            return sendResponse({
+                Player,
+            });
+        } catch (error) {
+            return sendResponse({
+                undefined,
             });
         }
     },
@@ -114,16 +135,63 @@ onGetPlayerSummaries(
         getPlayerSummariesArgs: { steamApiKey: string; steamID: string },
     ) => {
         try {
-            const profile = await getPlayerSummaries(
+            const Player = (await getSteamPlayerSummaries(
                 getPlayerSummariesArgs.steamApiKey,
                 getPlayerSummariesArgs.steamID,
-            );
+            )) as { profile: typeof Player };
+
             return sendResponse({
-                player: profile,
+                Player,
             });
         } catch (error) {
             return sendResponse({
-                player: null,
+                undefined,
+            });
+        }
+    },
+);
+
+onGetSteamPlaytime(
+    async (
+        sendResponse: CallableFunction,
+        getSteamPlaytimeArgs: { steamApiKey: string; steamID: string },
+    ) => {
+        try {
+            const Player = (await getSteamPlaytime(
+                getSteamPlaytimeArgs.steamApiKey,
+                getSteamPlaytimeArgs.steamID,
+            )) as { activity: typeof Player };
+
+            return sendResponse({
+                Player,
+            });
+        } catch (error) {
+            return sendResponse({
+                undefined,
+            });
+        }
+    },
+);
+
+onGetSteamKillsDeaths(
+    async (
+        sendResponse: CallableFunction,
+        getSteamKillsDeathsArgs: { steamApiKey: string; steamID: string },
+    ) => {
+        try {
+            const Player = (await getSteamKillsDeaths(
+                getSteamKillsDeathsArgs.steamApiKey,
+                getSteamKillsDeathsArgs.steamID,
+            )) as { activity: typeof Player };
+
+            console.log("Steam Kills/Deaths Player Data:", Player);
+
+            return sendResponse({
+                Player,
+            });
+        } catch (error) {
+            return sendResponse({
+                undefined,
             });
         }
     },

@@ -1,12 +1,16 @@
 import { createMessage } from "@vocably/hermes";
-import { BattlemetricsPlayerProfile } from "../../components/panel/component";
-import { PlayerActivity } from "../../components/panel/component";
+import { OwnServer, Player } from "@src/types";
 
-type getPlayerInfoArgs = { battlemetricsApiToken: string; playerId: string };
+type getPlayerInfoArgs = {
+    battlemetricsApiToken: string;
+    playerId: string;
+    ownServers: OwnServer[];
+};
 
 type getPlayerInfoResponse = {
-    player: BattlemetricsPlayerProfile | undefined;
-    activity: PlayerActivity | undefined;
+    Player: {
+        player: Player;
+    };
 };
 
 export const [getPlayerInfo, onGetPlayerInfo] = createMessage<

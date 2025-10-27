@@ -1,16 +1,11 @@
-import React, { JSX, InputHTMLAttributes } from "react";
+import { OwnServer } from "@src/types";
 import { Switch } from "../switch";
-import { Spinner } from "../spinner";
-import css from "../../styles.module.css";
 import classNames from "classnames";
-
-interface OrgServer {
-    checked: boolean;
-    server: Record<string, unknown>;
-}
+import css from "../../styles.module.css";
+import React, { JSX } from "react";
 
 interface ServersProps {
-    serverList?: OrgServer[];
+    serverList?: OwnServer[];
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
     refreshingServers?: boolean;
@@ -20,7 +15,7 @@ export function Servers(props: ServersProps): JSX.Element {
     let list: JSX.Element[] | undefined;
 
     if (props.serverList) {
-        list = props.serverList.map((entry: OrgServer, i) => {
+        list = props.serverList.map((entry: OwnServer, i) => {
             return (
                 <Switch
                     key={i}

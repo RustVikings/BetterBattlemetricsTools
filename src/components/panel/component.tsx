@@ -1,99 +1,28 @@
-import React, {
-    JSX,
-    useContext,
-    createContext,
-    useState,
-    useEffect,
-} from "react";
-import { getSettings } from "../../messaging/internal/getSettings";
-import { getPlayerInfo } from "../../messaging/battlemetrics/getPlayerInfo";
-import { getPlayerSummaries } from "../../messaging/steam/getPlayerSummaries";
-import css from "./styles.module.css";
-import { OrgServer } from "../options/component";
-import { PlayerBanner } from "./components/playerbanner/";
+import {
+    BattlemetricsAnticheatStats,
+    BattlemetricsPlayerProfile,
+    BattlemetricsReportStats,
+} from "@src/types/battlemetrics";
+import {
+    BattlemetricsKDStats,
+    BattlemetricsPlaytimeStats,
+    Options,
+} from "@src/types";
 import { CurrentServer } from "./components/currentserver/component";
+import { getPlayerActivity } from "@src/messaging/battlemetrics/";
+import { getPlayerInfo } from "@src/messaging/battlemetrics/";
+import { getPlayerSummaries } from "@src/messaging/steam/";
+import { getSteamKillsDeaths, getSteamPlaytime } from "@src/messaging/steam/";
+import { Player, LoadingState, SteamPlayerProfile } from "@src/types";
+import { PlayerBanner } from "./components/playerbanner/";
 import { PlayerInfo } from "./components/playerinfo/component";
-import { getPlayerStats } from "@src/utils/getStats";
+import Browser from "webextension-polyfill";
+import css from "./styles.module.css";
+import React, { JSX, createContext, useState, useEffect } from "react";
 
-export interface BattlemetricsPlayerProfile {
-    data: {
-        type: string;
-        id: string;
-        attributes?: {
-            [key: string]: unknown;
-        };
-        relationships?: {
-            [key: string]: unknown;
-        };
-    };
-    included?: {
-        attributes: {
-            [key: string]: any;
-        };
-        id: string;
-        type: string;
-        relationships?: {
-            [key: string]: unknown;
-        };
-        meta?: { [key: string]: unknown };
-    }[];
-}
-
-export interface PlayerActivity {
-    data: {
-        attributes: {
-            [key: string]: any;
-        };
-        id: string;
-        type: string;
-        relationships?: {
-            [key: string]: unknown;
-        };
-    }[];
-    included?: {
-        attributes: {
-            [key: string]: any;
-        };
-        id: string;
-        type: string;
-        relationships?: {
-            [key: string]: unknown;
-        };
-    };
-}
-
-export interface PlayerStats {
-    kills: number;
-    deaths: number;
-    kills24h: number;
-    deaths24h: number;
-    reports: {
-        cheat: number;
-        cheat24h: number;
-        teaming: number;
-        teaming24h: number;
-        other: number;
-        other24h: number;
-    };
-}
-
-export interface PlayerProps {
-    id?: string;
-    steamID?: string;
-    playerProfile?: BattlemetricsPlayerProfile;
-    playerStats?: PlayerStats;
-}
-
-interface OptionsProps {
-    battlemetricsApiToken: string;
-    steamApiKey: string;
-    orgServers: OrgServer[];
-}
-
-export const OptionsContext = createContext<OptionsProps | undefined>(
-    undefined,
-);
-export const PlayerContext = createContext<PlayerProps | undefined>(undefined);
+export const PlayerContext = createContext<Player | null>(null);
+export const LoadingContext = createContext<LoadingState | null>(null);
+export const OptionsContext = createContext<Options | undefined>(undefined);
 
 export function Panel(): JSX.Element {
     // Get the player ID from the URL
@@ -101,108 +30,337 @@ export function Panel(): JSX.Element {
     const urlMatches = currentPageURL.matchAll(
         /http[s]*:\/\/www.battlemetrics.com\/rcon\/players\/(\d+)/g,
     );
-    const playerId = urlMatches?.next().value?.[1] || undefined;
+    const playerId = urlMatches?.next().value?.[1] as string;
 
     // Default state for options
-    const defaultOptions: OptionsProps = {
+    const defaultOptions: Options = {
         battlemetricsApiToken: "",
         steamApiKey: "",
-        orgServers: [],
+        ownServers: [],
     };
+
     // Default state for player
-    const defaultPlayer: PlayerProps = {
+    const defaultPlayer: Player = {
         id: playerId,
-        steamID: undefined,
-        playerProfile: undefined,
-        playerStats: undefined,
+        steamID: "",
+        profile: {
+            battlemetrics: {} as BattlemetricsPlayerProfile,
+            steam: {} as SteamPlayerProfile,
+        },
+        stats: {
+            kd: {
+                kills_24h: 0,
+                deaths_24h: 0,
+                deaths: 0,
+                kills: 0,
+            } as BattlemetricsKDStats,
+            playtime: {
+                battlemetrics: 0,
+                yourservers: 0,
+                aim: 0,
+            } as BattlemetricsPlaytimeStats,
+            reports: {
+                cheat: 0,
+                teaming: 0,
+                other: 0,
+                cheat_24h: 0,
+                teaming_24h: 0,
+                other_24h: 0,
+            } as BattlemetricsReportStats,
+            anticheat: {
+                arkan: {
+                    no_recoil: 0,
+                    aimbot: 0,
+                    no_recoil_24h: 0,
+                    aimbot_24h: 0,
+                } as BattlemetricsAnticheatStats["arkan"],
+                guardian: {
+                    cheat: 0,
+                    antiflood: 0,
+                    cheat_24h: 0,
+                    antiflood_24h: 0,
+                } as BattlemetricsAnticheatStats["guardian"],
+            },
+            servers_played: 0,
+        },
+    };
+
+    const detfaultLoadingState: LoadingState = {
+        options: true,
+        playerInfo: true,
+        playerActivity: true,
+        steamProfile: true,
+        steamPlaytime: true,
+        steamKillsDeaths: true,
     };
 
     // State hooks for options and player data
-    const [options, setOptions] = useState<OptionsProps>(defaultOptions);
-    const [playerData, setPlayerData] = useState<PlayerProps>(defaultPlayer);
+    // const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
+    const [Options, setOptions] = useState<Options>(defaultOptions);
+    const [Player, setPlayer] = useState<Player>(defaultPlayer);
+    const [Loading, setLoading] = useState<LoadingState>(detfaultLoadingState);
 
-    useEffect(() => {
-        async function fetchOptions() {
+    async function fetchOptions() {
+        const Options = (await Browser.storage.local.get()) as Options;
+        setLoading((prevLoading) => ({
+            ...prevLoading,
+            options: true,
+        }));
+        if (Options !== null && Options !== undefined) {
+            if (
+                !Options.battlemetricsApiToken ||
+                !Options.steamApiKey ||
+                !Options.ownServers
+            ) {
+                setOptions(defaultOptions);
+            } else {
+                setOptions(Options);
+            }
+            setLoading((prevLoading) => ({
+                ...prevLoading,
+                options: false,
+            }));
+        }
+    }
+
+    async function fetchPlayerInfo() {
+        if (Options.battlemetricsApiToken && Player?.id) {
             try {
-                const response = await getSettings(null);
-                const options = response.Options;
-                if (options) {
-                    setOptions({
-                        battlemetricsApiToken:
-                            typeof options?.battlemetricsApiToken === "string"
-                                ? options.battlemetricsApiToken
-                                : "",
-                        steamApiKey:
-                            typeof options?.steamApiKey === "string"
-                                ? options.steamApiKey
-                                : "",
-                        orgServers: Array.isArray(options?.orgServers)
-                            ? options.orgServers
-                            : [],
-                    });
+                const response = await getPlayerInfo({
+                    battlemetricsApiToken: Options.battlemetricsApiToken,
+                    playerId: Player.id,
+                    ownServers: Options.ownServers,
+                });
+                const player = response.Player.player;
+
+                if (player) {
+                    console.log("Updating player info:", player);
+                    setPlayer((prevPlayer) => ({
+                        ...prevPlayer,
+                        ...player,
+                    }));
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        playerInfo: false,
+                    }));
+                } else {
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        playerInfo: true,
+                    }));
                 }
             } catch (e) {
-                // fallback to defaultOptions
-                setOptions(defaultOptions);
+                // fallback to defaultPlayer
+                setPlayer(Player);
             }
         }
+    }
+
+    async function fetchPlayerActivity() {
+        if (
+            Player.id &&
+            Options.battlemetricsApiToken &&
+            Options.arkan &&
+            Options.guardian
+        ) {
+            try {
+                const response = await getPlayerActivity({
+                    battlemetricsApiToken: Options.battlemetricsApiToken,
+                    playerId: Player.id,
+                    arkanWarnings: Options.arkan,
+                    guardianWarnings: Options.guardian,
+                });
+
+                const player = response.Player.player;
+
+                if (player) {
+                    console.log("Updating player activity:", player);
+                    setPlayer((prevPlayer) => ({
+                        ...prevPlayer,
+                        stats: {
+                            ...prevPlayer.stats,
+                            ...player.stats,
+                        },
+                    }));
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        playerActivity: false,
+                    }));
+                } else {
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        playerActivity: true,
+                    }));
+                }
+            } catch (e) {
+                console.error("Panel: fetchPlayerActivity error", e);
+            }
+        }
+    }
+
+    async function fetchSteamPlayerProfile() {
+        if (Player.steamID && Options.steamApiKey) {
+            try {
+                const response = await getPlayerSummaries({
+                    steamApiKey: Options.steamApiKey,
+                    steamID: Player.steamID,
+                });
+
+                const player = response.Player.player;
+
+                if (player) {
+                    console.log("Updating Steam player profile:", player);
+                    setPlayer((prevPlayer) => ({
+                        ...prevPlayer,
+                        profile: {
+                            ...prevPlayer.profile,
+                            steam: {
+                                ...prevPlayer.profile.steam,
+                                ...player.profile.steam,
+                            },
+                        },
+                    }));
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        steamProfile: false,
+                    }));
+                } else {
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        steamProfile: true,
+                    }));
+                }
+            } catch (e) {
+                console.error("Panel: fetchSteamProfile error", e);
+            }
+        }
+    }
+
+    async function fetchSteamPlaytime() {
+        if (Player.steamID && Options.steamApiKey) {
+            try {
+                const response = await getSteamPlaytime({
+                    steamApiKey: Options.steamApiKey,
+                    steamID: Player.steamID,
+                });
+
+                const player = response.Player.player;
+
+                if (player) {
+                    console.log("Updating Steam playtime:", player);
+                    setPlayer((prevPlayer) => ({
+                        ...prevPlayer,
+                        stats: {
+                            ...prevPlayer.stats,
+                            playtime: {
+                                ...prevPlayer.stats.playtime,
+                                steam: player.stats.playtime.steam,
+                            },
+                        },
+                    }));
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        steamPlaytime: false,
+                    }));
+                } else {
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        steamPlaytime: true,
+                    }));
+                }
+            } catch (e) {
+                console.error("Panel: fetchSteamPlaytime error", e);
+            }
+        }
+    }
+
+    async function fetchSteamKillsDeaths() {
+        if (Player.steamID && Options.steamApiKey) {
+            try {
+                const response = await getSteamKillsDeaths({
+                    steamApiKey: Options.steamApiKey,
+                    steamID: Player.steamID,
+                });
+
+                setLoading((prevLoading) => ({
+                    ...prevLoading,
+                    steamKillsDeaths: true,
+                }));
+
+                const player = response.Player.player;
+
+                // console.log("Fetched Steam Kills/Deaths:", player);
+
+                if (player) {
+                    console.log(
+                        "Current Kills/Deaths:",
+                        Player.stats.kd,
+                        "New Steam Kills/Deaths:",
+                        player.stats.kd,
+                    );
+                    if (
+                        player.stats.kd.kills > Player.stats.kd.kills ||
+                        !Player.stats.kd.kills
+                    ) {
+                        console.log(
+                            "Updating player kills:",
+                            player.stats.kd.kills,
+                        );
+                        setPlayer((prevPlayer) => ({
+                            ...prevPlayer,
+                            stats: {
+                                ...prevPlayer.stats,
+                                kd: {
+                                    ...prevPlayer.stats.kd,
+                                    kills: player.stats.kd.kills,
+                                    deaths: player.stats.kd.deaths,
+                                },
+                            },
+                        }));
+                    } else {
+                        setPlayer((prevPlayer) => ({
+                            ...prevPlayer,
+                        }));
+                    }
+                    setLoading((prevLoading) => ({
+                        ...prevLoading,
+                        steamKillsDeaths: false,
+                    }));
+                }
+            } catch (e) {
+                console.error("Panel: fetchSteamKillsDeaths error", e);
+            }
+        }
+    }
+
+    useEffect(() => {
         fetchOptions();
     }, []);
 
     useEffect(() => {
-        async function fetchPlayer() {
-            if (options.battlemetricsApiToken && playerData?.id) {
-                try {
-                    const response = await getPlayerInfo({
-                        battlemetricsApiToken: options.battlemetricsApiToken,
-                        playerId: playerData.id,
-                    });
-                    const player = response.player;
-                    const activity = response.activity;
-                    const stats = getPlayerStats(activity, playerId);
-                    console.log("Panel: playerStats", stats);
-                    if (player) {
-                        // console.log("Panel: playerRecord", player);
-                        setPlayerData((prevData) => ({
-                            ...prevData,
-                            id: playerId,
-                            steamID: player.included?.find(
-                                (item: any) =>
-                                    item.type === "identifier" &&
-                                    item.attributes?.type === "steamID",
-                            )?.attributes.value,
-                            playerProfile: player,
-                            playerStats: stats,
-                        }));
-                    } else {
-                        setPlayerData((prevData) => ({
-                            ...prevData,
-                            steamId: undefined,
-                            playerProfile: undefined,
-                            playerStats: undefined,
-                        }));
-                    }
-                } catch (e) {
-                    // fallback to defaultPlayer
-                    setPlayerData((prevData) => ({
-                        ...prevData,
-                        steamId: undefined,
-                    }));
-                }
-            }
-        }
-        fetchPlayer();
-    }, [options.battlemetricsApiToken, playerData.id]);
+        fetchPlayerInfo();
+        fetchPlayerActivity();
+    }, [Options.battlemetricsApiToken, Options.ownServers, Player.id]);
+
+    useEffect(() => {
+        fetchSteamPlayerProfile();
+        fetchSteamPlaytime();
+        fetchSteamKillsDeaths();
+    }, [Player.steamID, Options.steamApiKey, Loading.playerActivity]);
+
+    console.log("Rendering Panel component with Player:", Player);
 
     return (
-        <OptionsContext.Provider value={options}>
-            <PlayerContext.Provider value={playerData}>
-                <div className={css.box}>
-                    <PlayerBanner />
-                    <CurrentServer />
-                    <PlayerInfo />
-                </div>
-            </PlayerContext.Provider>
-        </OptionsContext.Provider>
+        <PlayerContext.Provider value={Player}>
+            <LoadingContext.Provider value={Loading}>
+                <OptionsContext.Provider value={Options}>
+                    <div className={css.box}>
+                        <PlayerBanner />
+                        <CurrentServer />
+                        <PlayerInfo />
+                    </div>
+                </OptionsContext.Provider>
+            </LoadingContext.Provider>
+        </PlayerContext.Provider>
     );
 }

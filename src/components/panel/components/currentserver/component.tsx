@@ -1,41 +1,55 @@
 import { DataPoint } from "../datapoint";
 import { KillDeathRatio } from "../killdeathratio/component";
-import { PlayerContext } from "../../component";
+import { LoadingState, Player } from "@src/types";
+import { PlayerContext, LoadingContext } from "@src/components/panel/";
 import classNames from "classnames";
 import css from "../../styles.module.css";
 import moment from "moment";
 import React, { JSX, useContext } from "react";
-import { parse } from "path";
 
 export function CurrentServer(): JSX.Element {
-    const player = useContext(PlayerContext);
-    // console.log("CurrentServer: ", player);
-    const profile = player?.playerProfile?.included;
-    const currentServer = profile?.find(
-        (item) => item.type === "server" && item.meta?.online === true,
-    );
-    const stats = player?.playerStats;
+    const Player = useContext(PlayerContext) as Player;
+    const Loading = useContext(LoadingContext) as LoadingState;
+    const currentServer = Player?.current_server;
+    const stats = Player.stats;
 
-    const kdRatio = parseFloat(stats?.kd24h).toFixed(2) || "N/A";
+    const kdRatio = (kills: number, deaths: number): number => {
+        if (deaths === 0) return kills;
+        return parseFloat((kills / deaths).toFixed(2));
+    };
+
     return (
         <div className={classNames(css.section, css.cols_2)}>
             <div>
                 <DataPoint
                     label="Current Server"
-                    value={currentServer?.attributes?.name || "Offline"}
+                    value={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.name || "Offline"
+                    }
+                    title={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.name || "Offline"
+                    }
                 />
                 <DataPoint
                     label="Server address"
                     value={
-                        currentServer?.attributes.ip &&
-                        currentServer?.attributes.port
-                            ? `client.connect ${currentServer?.attributes?.ip}:${currentServer?.attributes?.port}`
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.ip &&
+                              currentServer?.attributes.port
+                            ? `${currentServer?.attributes.ip}:${currentServer?.attributes.port}`
                             : "Unavailable"
                     }
                     title={
-                        currentServer?.attributes.ip &&
-                        currentServer?.attributes.port
-                            ? `client.connect ${currentServer?.attributes?.ip}:${currentServer?.attributes?.port}`
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.ip &&
+                              currentServer?.attributes.port
+                            ? `${currentServer?.attributes.ip}:${currentServer?.attributes.port}`
                             : "Unavailable"
                     }
                 />
@@ -43,17 +57,21 @@ export function CurrentServer(): JSX.Element {
                     label="Join time"
                     // value={(currentServer?.meta?.firstSeen as string) || "N/A"}
                     value={
-                        currentServer?.meta?.lastSeen
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.joined
                             ? `${moment(
-                                  currentServer?.meta?.lastSeen as Date,
+                                  currentServer?.attributes.joined as Date,
                               ).fromNow()}`
                             : "Unavailable"
                     }
                     title={
-                        currentServer?.meta?.lastSeen
-                            ? `Joined: ${moment(
-                                  currentServer?.meta?.lastSeen as Date,
-                              ).format("DD/MM/YYYY, h:mm A")}`
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : currentServer?.attributes.joined
+                            ? `${moment(
+                                  currentServer?.attributes.joined as Date,
+                              ).fromNow()}`
                             : "Unavailable"
                     }
                 />
@@ -61,12 +79,26 @@ export function CurrentServer(): JSX.Element {
             <div className={classNames(css.cols_2)}>
                 <KillDeathRatio
                     title="Last 24 hours"
-                    kdRatio={parseFloat(stats?.kd24h).toFixed(2) || "N/A"}
+                    kdRatio={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : kdRatio(
+                                  stats?.kd.kills_24h,
+                                  stats?.kd.deaths_24h,
+                              ).toFixed(2)
+                    }
                     period="24h"
                 />
                 <KillDeathRatio
                     title="Total"
-                    kdRatio={parseFloat(stats?.kd).toFixed(2) || "N/A"}
+                    kdRatio={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : kdRatio(
+                                  stats?.kd.kills,
+                                  stats?.kd.deaths,
+                              ).toFixed(2)
+                    }
                     period="total"
                 />
             </div>

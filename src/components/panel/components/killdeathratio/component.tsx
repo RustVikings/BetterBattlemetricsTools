@@ -1,4 +1,4 @@
-import React, { JSX, useContext } from "react";
+import React, { JSX, use, useContext } from "react";
 import { Tag } from "../tag";
 import {
     Chart as ChartJS,
@@ -32,14 +32,26 @@ import classNames from "classnames";
 import css from "../../styles.module.css";
 import { Font } from "chartjs-plugin-datalabels/types/options";
 import Browser from "webextension-polyfill";
-import { PlayerContext } from "../..";
+import { LoadingContext, PlayerContext } from "@src/components/panel/";
+import { LoadingState, Player } from "@src/types";
 
+/* create icon elements */
 const icons = [new Image(12, 12), new Image(12, 12)];
+/* load kill/death icons */
 icons[0].src = Browser.runtime.getURL("icons/kill.svg");
 icons[1].src = Browser.runtime.getURL("icons/death.svg");
 
 export const options = {
+    elements: {
+        point: {
+            usePointStyle: true,
+            pointStyle: [icons[0], icons[1]],
+        },
+    },
     responsive: true,
+    layout: {
+        padding: 0,
+    },
     scales: {
         x: {
             display: false,
@@ -66,6 +78,10 @@ export const options = {
                 color: "white" as Color,
                 padding: 12,
                 textAlign: "center" as const,
+                usePointStyle: true,
+                pointStyle: "circle" as const,
+                pointStyleWidth: 20,
+                borderRadius: 4,
             },
             onClick: (e: any): void => e.stopPropagation(),
         },
@@ -77,16 +93,16 @@ export const options = {
 
 interface KillDeathRatioProps {
     title?: string;
-    kdRatio?: number;
+    kdRatio?: string;
     period?: "24h" | "total";
 }
 
-const kdRatioSeverity = (kdRatio: number) => {
+const kdRatioSeverity = (kdRatio: string) => {
     const kd = parseFloat(kdRatio);
     switch (true) {
-        case kd > 1.5:
+        case kd >= 3:
             return "danger";
-        case kd > 1 && kd <= 1.5:
+        case kd > 1 && kd < 3:
             return "warning";
         default:
             return "normal";
@@ -98,41 +114,46 @@ export function KillDeathRatio({
     kdRatio,
     period,
 }: KillDeathRatioProps): JSX.Element {
-    const player = useContext(PlayerContext);
-    const stats = player?.playerStats;
     const labels = [""];
+
+    /* Load relevant data Contexts */
+    const Player = useContext(PlayerContext) as Player;
+    const Loading = useContext(LoadingContext) as LoadingState;
+    const kd = Player.stats.kd;
+
+    // console.log("Player", Player);
 
     const data = {
         labels,
         datasets: [
             {
                 label: "Kills",
-                data: [period === "24h" ? stats?.kills24h : stats?.kills || 0],
-                backgroundColor: "#8E8E8E",
+                data: [
+                    !Loading.playerActivity
+                        ? period === "24h"
+                            ? kd.kills_24h
+                            : kd.kills
+                        : 0,
+                ],
+                backgroundColor: "#ca3d3d",
                 borderRadius: {
                     topLeft: 4,
                     topRight: 4,
-                },
-                legend: {
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: icons[0],
-                    },
                 },
             },
             {
                 label: "Deaths",
                 data: [
-                    period === "24h" ? stats?.deaths24h : stats?.deaths || 0,
+                    !Loading.playerActivity
+                        ? period === "24h"
+                            ? kd.deaths_24h
+                            : kd.deaths
+                        : 0,
                 ],
-                backgroundColor: "#3C3C3C",
+                backgroundColor: "#61a138",
                 borderRadius: {
                     topLeft: 4,
                     topRight: 4,
-                },
-                legend: {
-                    usePointStyle: true,
-                    pointStyle: icons[1],
                 },
             },
         ],
@@ -143,8 +164,14 @@ export function KillDeathRatio({
             <div className={css.heading}>
                 <div className={css.title}>{title}</div>
                 <Tag
-                    value={`K/D ${kdRatio}`}
-                    severity={kdRatioSeverity(kdRatio as number)}
+                    value={
+                        Loading.playerActivity ? "Loading..." : `K/D ${kdRatio}`
+                    }
+                    severity={
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : kdRatioSeverity(kdRatio || "0")
+                    }
                 />
             </div>
             <Bar options={options} data={data} />

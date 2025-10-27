@@ -1,0 +1,19 @@
+switch {
+    @apply flex;
+    @apply flex-row;
+    @apply items-center;
+    @apply justify-between;
+    @apply mb-1;
+}
+
+label {
+    @apply mb-2;
+
+    @apply inline-block;
+    @apply hover:cursor-pointer;
+}
+
+input {
+    @apply mb-2;
+    @apply font-mono;
+}
