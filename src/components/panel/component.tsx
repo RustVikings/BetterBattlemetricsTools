@@ -83,6 +83,15 @@ export function Panel(): JSX.Element {
             },
             servers_played: 0,
         },
+        current_server: {
+            online: false,
+            attributes: {
+                name: "",
+                ip: "",
+                port: 0,
+                joined: new Date(),
+            },
+        },
     };
 
     const detfaultLoadingState: LoadingState = {
@@ -161,6 +170,13 @@ export function Panel(): JSX.Element {
                                 ...player.stats.playtime,
                             },
                             servers_played: player.stats.servers_played,
+                        },
+                        current_server: {
+                            online: player.current_server.online,
+                            attributes: {
+                                ...prevPlayer.current_server.attributes,
+                                ...player.current_server.attributes,
+                            },
                         },
                     }));
                     setLoading((prevLoading) => ({
@@ -334,20 +350,11 @@ export function Panel(): JSX.Element {
                 console.log("Fetched Steam Kills/Deaths:", player);
 
                 if (player) {
-                    console.log(
-                        "Current Kills/Deaths:",
-                        Player.stats.kd,
-                        "New Steam Kills/Deaths:",
-                        player.stats.kd,
-                    );
+                    console.log("Updating Steam Kills/Deaths:", player);
                     if (
                         player.stats.kd.kills > Player.stats.kd.kills ||
                         !Player.stats.kd.kills
                     ) {
-                        console.log(
-                            "Updating player kills:",
-                            player.stats.kd.kills,
-                        );
                         setPlayer((prevPlayer) => ({
                             ...prevPlayer,
                             stats: {

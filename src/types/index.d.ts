@@ -16,7 +16,7 @@ export type Player = {
     steamID: string;
     profile: PlayerProfile;
     stats: BattlemetricsPlayerStats;
-    current_server?: BattlemetricsCurrentServer;
+    current_server: BattlemetricsCurrentServer;
 };
 
 export type Options = {
