@@ -90,7 +90,7 @@ export function CurrentServer(): JSX.Element {
                     period="24h"
                 />
                 <KillDeathRatio
-                    title="Total"
+                    title="All time"
                     kdRatio={
                         Loading.playerActivity
                             ? "Loading..."

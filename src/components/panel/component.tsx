@@ -101,11 +101,11 @@ export function Panel(): JSX.Element {
     const [Loading, setLoading] = useState<LoadingState>(detfaultLoadingState);
 
     async function fetchOptions() {
-        const Options = (await Browser.storage.local.get()) as Options;
         setLoading((prevLoading) => ({
             ...prevLoading,
             options: true,
         }));
+        const Options = (await Browser.storage.local.get()) as Options;
         if (Options !== null && Options !== undefined) {
             if (
                 !Options.battlemetricsApiToken ||
@@ -126,18 +126,42 @@ export function Panel(): JSX.Element {
     async function fetchPlayerInfo() {
         if (Options.battlemetricsApiToken && Player?.id) {
             try {
+                setLoading((prevLoading) => ({
+                    ...prevLoading,
+                    playerInfo: true,
+                }));
+
                 const response = await getPlayerInfo({
                     battlemetricsApiToken: Options.battlemetricsApiToken,
                     playerId: Player.id,
                     ownServers: Options.ownServers,
                 });
+
                 const player = response.Player.player;
+
+                console.log("Fetched player info:", player);
 
                 if (player) {
                     console.log("Updating player info:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
-                        ...player,
+                        steamID: player.steamID,
+                        id: player.id,
+                        profile: {
+                            ...prevPlayer.profile,
+                            battlemetrics: {
+                                ...prevPlayer.profile.battlemetrics,
+                                ...player.profile.battlemetrics,
+                            },
+                        },
+                        stats: {
+                            ...prevPlayer.stats,
+                            playtime: {
+                                ...prevPlayer.stats.playtime,
+                                ...player.stats.playtime,
+                            },
+                            servers_played: player.stats.servers_played,
+                        },
                     }));
                     setLoading((prevLoading) => ({
                         ...prevLoading,
@@ -164,6 +188,10 @@ export function Panel(): JSX.Element {
             Options.guardian
         ) {
             try {
+                setLoading((prevLoading) => ({
+                    ...prevLoading,
+                    playerActivity: true,
+                }));
                 const response = await getPlayerActivity({
                     battlemetricsApiToken: Options.battlemetricsApiToken,
                     playerId: Player.id,
@@ -172,6 +200,8 @@ export function Panel(): JSX.Element {
                 });
 
                 const player = response.Player.player;
+
+                console.log("Fetched player activity:", player);
 
                 if (player) {
                     console.log("Updating player activity:", player);
@@ -201,12 +231,18 @@ export function Panel(): JSX.Element {
     async function fetchSteamPlayerProfile() {
         if (Player.steamID && Options.steamApiKey) {
             try {
+                setLoading((prevLoading) => ({
+                    ...prevLoading,
+                    steamProfile: true,
+                }));
                 const response = await getPlayerSummaries({
                     steamApiKey: Options.steamApiKey,
                     steamID: Player.steamID,
                 });
 
                 const player = response.Player.player;
+
+                console.log("Fetched Steam player profile:", player);
 
                 if (player) {
                     console.log("Updating Steam player profile:", player);
@@ -239,12 +275,18 @@ export function Panel(): JSX.Element {
     async function fetchSteamPlaytime() {
         if (Player.steamID && Options.steamApiKey) {
             try {
+                setLoading((prevLoading) => ({
+                    ...prevLoading,
+                    steamPlaytime: true,
+                }));
                 const response = await getSteamPlaytime({
                     steamApiKey: Options.steamApiKey,
                     steamID: Player.steamID,
                 });
 
                 const player = response.Player.player;
+
+                console.log("Fetched Steam playtime:", player);
 
                 if (player) {
                     console.log("Updating Steam playtime:", player);
@@ -277,19 +319,19 @@ export function Panel(): JSX.Element {
     async function fetchSteamKillsDeaths() {
         if (Player.steamID && Options.steamApiKey) {
             try {
-                const response = await getSteamKillsDeaths({
-                    steamApiKey: Options.steamApiKey,
-                    steamID: Player.steamID,
-                });
-
                 setLoading((prevLoading) => ({
                     ...prevLoading,
                     steamKillsDeaths: true,
                 }));
 
+                const response = await getSteamKillsDeaths({
+                    steamApiKey: Options.steamApiKey,
+                    steamID: Player.steamID,
+                });
+
                 const player = response.Player.player;
 
-                // console.log("Fetched Steam Kills/Deaths:", player);
+                console.log("Fetched Steam Kills/Deaths:", player);
 
                 if (player) {
                     console.log(
@@ -348,7 +390,7 @@ export function Panel(): JSX.Element {
         fetchSteamKillsDeaths();
     }, [Player.steamID, Options.steamApiKey, Loading.playerActivity]);
 
-    console.log("Rendering Panel component with Player:", Player);
+    // console.log("Rendering Panel component with Player:", Player);
 
     return (
         <PlayerContext.Provider value={Player}>
