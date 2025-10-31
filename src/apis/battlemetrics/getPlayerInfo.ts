@@ -8,6 +8,17 @@ import {
 } from "@src/types";
 import { secondsToHours } from "@src/utils/time";
 
+/**
+ * Get player info from Battlemetrics API
+ *
+ * @param battlemetricsApiToken - The API token for Battlemetrics
+ * @param playerId - The ID of the player to retrieve info for
+ * @param ownServers - List of own servers to calculate playtime on
+ *
+ * @returns A promise that resolves to the player info data
+ *
+ * calls the Battlemetrics API to retrieve player information including profile.battlemetrics, stats.playtime, and current server
+ */
 export async function getPlayerInfo(
     battlemetricsApiToken: string,
     playerId: string,
@@ -55,15 +66,16 @@ export async function getPlayerInfo(
     /* save battlemetrics profile to Player object */
     Player.profile.battlemetrics = profile;
 
+    /* iterate through included servers to calculate playtime and current server */
     for (const server of toJson.included.filter(
         (item: { type: string }) => item.type === "server",
     )) {
         const game = server.relationships.game.data.id;
         /* check if the game is rust */
         if (game === "rust") {
-            /* increment servers played and add to battlemetrics playtime */
+            /* increment servers played and add to Player.stats.servers_played */
             servers_played++;
-            /* add server played time to total battlemetrics playtime */
+            /* add server played time to total battlemetrics Player.stats.playtime.battlemetrics */
             Player.stats.playtime.battlemetrics += secondsToHours(
                 server.meta.timePlayed as number,
             );
@@ -74,6 +86,7 @@ export async function getPlayerInfo(
                     (s) => s.server.name.toLowerCase() === server_name,
                 )
             ) {
+                /* add server played time to total yourservers playtime */
                 Player.stats.playtime.yourservers += secondsToHours(
                     server.meta.timePlayed as number,
                 );

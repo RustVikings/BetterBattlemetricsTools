@@ -46,7 +46,10 @@ export interface LoadingState {
     steamKillsDeaths?: boolean;
 }
 
-export type AutoreRefreshType = [boolean, () => void];
+export type AutoreRefreshType = {
+    autoRefresh: boolean;
+    setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
+};
 
 export {
     BattlemetricsAnticheatStats,

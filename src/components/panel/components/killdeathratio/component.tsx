@@ -121,7 +121,7 @@ export function KillDeathRatio({
     const Loading = useContext(LoadingContext) as LoadingState;
     const kd = Player.stats.kd;
 
-    // console.log("Player", Player);
+    // // console.log("Player", Player);
 
     const data = {
         labels,

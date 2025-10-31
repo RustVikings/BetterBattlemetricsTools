@@ -1,5 +1,11 @@
 import { OwnServer } from "@src/types";
 
+/**
+ * Get a list of servers the user has access to
+ *
+ * @param battlemetricsApiKey - The API key for Battlemetrics
+ * @returns A promise that resolves to the user's servers
+ */
 export async function getUserServers(
     battlemetricsApiKey: string,
 ): Promise<unknown> {

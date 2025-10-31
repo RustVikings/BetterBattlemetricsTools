@@ -1,17 +1,24 @@
 import {
     BattlemetricsArkanWarningsTypes,
-    BattlemetricsCurrentServer,
     BattlemetricsGuardianWarningsTypes,
     BattlemetricsMessageTypes,
     BattlemetricsPlayerStats,
     BattlemetricsReportTypes,
     Player,
-    PlayerProfile,
 } from "@src/types";
 
 import { isWithin24hours } from "@src/utils/time";
-import { parse } from "path";
 
+/**
+ * Get player activity from Battlemetrics API
+ *
+ * @param battlemetricsApiToken - The API token for Battlemetrics
+ * @param playerId - The ID of the player to retrieve activity for
+ * @param arkanWarnings - Whether to include Arkan warnings
+ * @param guardianWarnings - Whether to include Guardian warnings
+ *
+ * @returns A promise that resolves to the player activity data
+ */
 export async function getPlayerActivity(
     battlemetricsApiToken: string,
     playerId: string,
@@ -57,7 +64,10 @@ export async function getPlayerActivity(
         },
     } as BattlemetricsPlayerStats;
 
+    /* assign stats to stats property of the Player object for easier access */
     const stats = Player.stats;
+
+    /* Convert playerId to string */
     const player_id_num = parseInt(playerId);
 
     for (const activity of responseData.data) {
@@ -67,6 +77,7 @@ export async function getPlayerActivity(
             const reportType = activity.attributes.data
                 .reportType as BattlemetricsReportTypes;
             activity.attributes.data.reportType = reportType;
+            /* Increment report stats based on report type */
             switch (reportType) {
                 case "cheat":
                     stats.reports.cheat++;
@@ -90,6 +101,9 @@ export async function getPlayerActivity(
                     break;
             }
         } else if (messageType === "rustLog:playerDeath:PVP") {
+            /**
+             * Increment kill/death stats based on killer ID
+             */
             if (isWithin24hours(activity.attributes.timestamp)) {
                 switch (activity.attributes.data.killer_id) {
                     case player_id_num:

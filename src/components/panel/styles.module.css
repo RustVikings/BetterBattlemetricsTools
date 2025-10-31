@@ -35,6 +35,10 @@
         &:last-child {
             @apply mb-0;
         }
+
+        &.current_server {
+            @apply items-center;
+        }
     }
 
     .cols_6 {
@@ -160,6 +164,7 @@
                 width: 64px;
                 height: 64px;
                 @apply overflow-clip rounded-md mr-4 border border-white shadow-sm;
+                border-style: solid;
             }
             .player_banner_info {
                 .player_name {
@@ -174,6 +179,7 @@
                         line-height: 14px;
                     }
                 }
+                margin-left: 8px;
             }
         }
         .player_status {

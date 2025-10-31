@@ -6,6 +6,13 @@ import {
 } from "@src/types";
 import { minutesToHours } from "@src/utils/time";
 
+/**
+ * Get the playtime of a player in a specific game on Steam
+ *
+ * @param steamApiKey - The API key for Steam
+ * @param steamID - The Steam ID of the player
+ * @returns A promise that resolves to the player's Steam playtime
+ */
 export async function getSteamPlaytime(
     steamApiKey: string,
     steamID: string,
@@ -27,6 +34,7 @@ export async function getSteamPlaytime(
         Player.stats.playtime.steam = 0;
     } else {
         const steamPlaytimeHours = Math.round(
+            /* Find Rust game data and convert playtime to hours */
             minutesToHours(
                 data.response.games.find(
                     (game: { appid: number; playtime_forever: number }) =>

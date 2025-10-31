@@ -7,6 +7,8 @@ import waitForElement from "./utils/waitforelement";
 
 let root: Root = {} as Root;
 
+console.log("Better Battelemetrics Tools: Loaded");
+
 // Listen for messages from the background script
 Browser.runtime.onMessage.addListener((message: unknown) => {
     if ((message as { action: string }).action === "render-player-panel") {
@@ -16,17 +18,17 @@ Browser.runtime.onMessage.addListener((message: unknown) => {
 
             if (extensionElement) {
                 if (root === ({} as Root)) {
-                    console.log("Creating new root for existing element");
+                    // console.log("Creating new root for existing element");
                     root = createRoot(extensionElement);
                 }
             } else {
                 const div = document.createElement("div");
                 div.id = "BRT";
                 element.prepend(div);
-                console.log("Creating new root for new element");
+                // console.log("Creating new root for new element");
                 root = createRoot(div);
             }
-            console.log("root:", root);
+            // console.log("root:", root);
             root.render(<Panel />);
         });
     }

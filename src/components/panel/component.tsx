@@ -4,7 +4,7 @@ import {
     BattlemetricsReportStats,
 } from "@src/types/battlemetrics";
 import {
-    // AutoreRefreshType,
+    AutoreRefreshType,
     BattlemetricsKDStats,
     BattlemetricsPlaytimeStats,
     Options,
@@ -25,11 +25,6 @@ import { REFRESH_PLAYER_ACTIVITY_INTERVAL_MS } from "@src/config/";
 export const PlayerContext = createContext<Player | null>(null);
 export const LoadingContext = createContext<LoadingState | null>(null);
 export const OptionsContext = createContext<Options | undefined>(undefined);
-
-export type AutoreRefreshType = {
-    autoRefresh: boolean;
-    setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
-};
 
 export const AutoRefreshContext = createContext<AutoreRefreshType>({
     autoRefresh: false,
@@ -106,6 +101,7 @@ export function Panel(): JSX.Element {
         },
     };
 
+    // Default state for loading
     const detfaultLoadingState: LoadingState = {
         options: true,
         playerInfo: true,
@@ -117,8 +113,14 @@ export function Panel(): JSX.Element {
         steamKillsDeaths: true,
     };
 
-    // State hooks for options and player data
-    // const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
+    /**
+     * Initialize state
+     *
+     * Options - The user's options
+     * Player - The player's data
+     * Loading - The loading state of various data fetches
+     * autoRefresh - Whether to auto-refresh player activity
+     */
     const [Options, setOptions] = useState<Options>(defaultOptions);
     const [Player, setPlayer] = useState<Player>(defaultPlayer);
     const [Loading, setLoading] = useState<LoadingState>(detfaultLoadingState);
@@ -147,6 +149,15 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /** Fetch Player Info
+     *
+     * @param Options.battlemetricsApiToken - The Battlemetrics API token
+     * @param Player.id - The player's Battlemetrics ID
+     * @param Options.ownServers - The user's own servers
+     *
+     * Uses the getPlayerInfo messaging function to fetch the player's
+     * info from the Battlemetrics API. Updates the Player state with the fetched data.
+     */
     async function fetchPlayerInfo() {
         if (Options.battlemetricsApiToken && Player?.id) {
             try {
@@ -211,6 +222,16 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /** Fetch Player Activity
+     *
+     * @param Options.battlemetricsApiToken - The Battlemetrics API token
+     * @param Player.id - The player's Battlemetrics ID
+     * @param Options.arkan - Whether to fetch Arkan warnings
+     * @param Options.guardian - Whether to fetch Guardian warnings
+     *
+     * Uses the getPlayerActivity messaging function to fetch the player's
+     * activity from the Battlemetrics API. Updates the Player state with the fetched data.
+     */
     async function fetchPlayerActivity() {
         if (
             Player.id &&
@@ -233,10 +254,7 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                // console.log("Fetched player activity:", player);
-
                 if (player) {
-                    // console.log("Updating player activity:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         stats: {
@@ -266,6 +284,14 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /** Fetch Steam Player Profile
+     *
+     * @param Options.steamApiKey - The Steam API key
+     * @param Player.steamID - The player's Steam ID
+     *
+     * Uses the getPlayerSummaries messaging function to fetch the player's
+     * profile from the Steam API. Updates the Player state with the fetched data.
+     */
     async function fetchSteamPlayerProfile() {
         if (Player.steamID && Options.steamApiKey) {
             try {
@@ -280,10 +306,7 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                // console.log("Fetched Steam player profile:", player);
-
                 if (player) {
-                    // console.log("Updating Steam player profile:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         profile: {
@@ -310,6 +333,14 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /** Fetch Steam Playtime
+     *
+     * @param Options.steamApiKey - The Steam API key
+     * @param Player.steamID - The player's Steam ID
+     *
+     * Uses the getSteamPlaytime messaging function to fetch the player's
+     * playtime from the Steam API. Updates the Player state with the fetched data.
+     */
     async function fetchSteamPlaytime() {
         if (Player.steamID && Options.steamApiKey) {
             try {
@@ -354,6 +385,16 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /**
+     * Fetch Steam Kills/Deaths
+     *
+     * @param Options.steamApiKey - The Steam API key
+     * @param Player.steamID - The player's Steam ID
+     *
+     * Uses the getSteamKillsDeaths messaging function to fetch the player's
+     * kills and deaths from the Steam API. Updates the Player state with the
+     * fetched data if it is greater than the existing data.
+     */
     async function fetchSteamKillsDeaths() {
         if (Player.steamID && Options.steamApiKey) {
             try {
@@ -404,21 +445,33 @@ export function Panel(): JSX.Element {
         }
     }
 
+    /**
+     * Use effects to fetch data on component mount and when dependencies change
+     */
+
+    /** Fetch options on mount */
     useEffect(() => {
         fetchOptions();
     }, []);
 
+    /** Fetch player info and activity on mount and when dependencies change
+     * Options.battlemetricsApiToken, Options.ownServers, Player.id
+     */
     useEffect(() => {
         fetchPlayerInfo();
         fetchPlayerActivity();
     }, [Options.battlemetricsApiToken, Options.ownServers, Player.id]);
 
+    /** Fetch Steam stats when dependencies change
+     * Player.steamID, Options.steamApiKey, Loading.playerActivityInit
+     */
     useEffect(() => {
         fetchSteamKillsDeaths();
         fetchSteamPlayerProfile();
         fetchSteamPlaytime();
     }, [Player.steamID, Options.steamApiKey, Loading.playerActivityInit]);
 
+    /** Auto-refresh player activity */
     useEffect(() => {
         console.log(
             "Auto-refresh is now",
@@ -433,8 +486,6 @@ export function Panel(): JSX.Element {
             return;
         }
     }, [autoRefresh]);
-
-    // console.log("Rendering Panel component with Player:", Player);
 
     return (
         <AutoRefreshContext.Provider value={{ autoRefresh, setAutoRefresh }}>

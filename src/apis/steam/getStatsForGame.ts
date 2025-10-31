@@ -1,6 +1,14 @@
 import { BattlemetricsPlayerStats, Player } from "@src/types";
 import { RUST_APP_ID } from "@src/config/";
 
+/**
+ * Get Steam kills and deaths for Rust from Steam API
+ *
+ * @param steamApiKey - The API key for Steam
+ * @param steamID - The Steam ID of the player to retrieve stats for
+ *
+ * @returns A promise that resolves to the player's kills and deaths data
+ */
 export async function getSteamKillsDeaths(
     steamApiKey: string,
     steamID: string,

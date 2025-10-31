@@ -8,19 +8,34 @@ import moment from "moment";
 import React, { JSX, useContext } from "react";
 
 export function CurrentServer(): JSX.Element {
+    /**
+     * Get the player and loading context
+     */
     const Player = useContext(PlayerContext) as Player;
     const Loading = useContext(LoadingContext) as LoadingState;
+    /**
+     * Extract current server and stats from Player context
+     */
     const currentServer = Player?.current_server;
     const stats = Player.stats;
 
+    /**
+     * Calculate the kill/death ratio
+     *
+     * @param kills
+     * @param deaths
+     * @returns the kill/death ratio as a number
+     */
     const kdRatio = (kills: number, deaths: number): number => {
         if (deaths === 0) return kills;
         return parseFloat((kills / deaths).toFixed(2));
     };
 
     return (
-        <div className={classNames(css.section, css.cols_2)}>
-            <div>
+        <div
+            className={classNames(css.section, css.cols_2, css.current_server)}
+        >
+            <div className={css.server_data}>
                 <DataPoint
                     label="Current Server"
                     value={
@@ -55,7 +70,6 @@ export function CurrentServer(): JSX.Element {
                 />
                 <DataPoint
                     label="Join time"
-                    // value={(currentServer?.meta?.firstSeen as string) || "N/A"}
                     value={
                         Loading.playerActivity
                             ? "Loading..."

@@ -16,13 +16,14 @@ import {
 } from "./messaging/steam/";
 import { OwnServer } from "./types";
 import Browser from "webextension-polyfill";
-import { get } from "http";
 
-// Handle extension installation,
-// try to load settings
-// and open options page if no settings found
+/** Handle extension installation event
+ *
+ * Opens the options page if required options are missing
+ * from local storage
+ */
 Browser.runtime.onInstalled.addListener(() => {
-    async function loadSettings() {
+    async function loadOptions() {
         await Browser.storage.local.get().then((options) => {
             if (
                 !options.battlemetricsApiToken ||
@@ -33,11 +34,12 @@ Browser.runtime.onInstalled.addListener(() => {
             }
         });
     }
-    loadSettings();
+    loadOptions();
 });
 
 // Listen for navigation events to detect page changes and render the panel
 Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
+    /* Only act on the main frame */
     if (details.frameId === 0) {
         console.log("History state updated, sending message:", details.tabId);
         Browser.tabs.sendMessage(details.tabId, {
@@ -49,11 +51,8 @@ Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
 
 // Also listen for completed navigation events and render the panel
 Browser.webNavigation.onCompleted.addListener((details) => {
+    /* Only act on the main frame */
     if (details.frameId === 0) {
-        console.log(
-            "Main frame navigation completed, sending message:",
-            details.tabId,
-        );
         Browser.tabs.sendMessage(details.tabId, {
             action: "render-player-panel",
             details,
@@ -61,7 +60,15 @@ Browser.webNavigation.onCompleted.addListener((details) => {
     }
 });
 
-// Handle getServers message
+/** Handle getServers message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getServersArgs - The arguments for getting servers, including the Battlemetrics API token
+ * @return - array of servers or undefined on error
+ *
+ * Calls the getUserServers function to fetch user servers from the Battlemetrics API
+ */
+
 onGetServers(
     async (
         sendResponse: CallableFunction,
@@ -82,7 +89,14 @@ onGetServers(
     },
 );
 
-// Handle getPlayerInfo message
+/** Handle getPlayerInfo message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getPlayerInfoArgs - The arguments for getting player info, including the Battlemetrics API token, player ID, and own servers
+ * @return - Player object or undefined on error
+ *
+ * Calls the getPlayerInfo asynchronous function to fetch player information from the Battlemetrics API
+ */
 onGetPlayerInfo(
     async (
         sendResponse: CallableFunction,
@@ -109,6 +123,14 @@ onGetPlayerInfo(
     },
 );
 
+/** Handle getPlayerActivity message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getPlayerActivityArgs - The arguments for getting player activity, including the Battlemetrics API token, player ID, and warning flags
+ * @return - Player object or undefined on error
+ *
+ * Calls the getPlayerActivity asynchronous function to fetch player activity from the Battlemetrics API
+ */
 onGetPlayerActivity(
     async (
         sendResponse: CallableFunction,
@@ -138,6 +160,14 @@ onGetPlayerActivity(
     },
 );
 
+/** Handle getPlayerSummaries message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getPlayerSummariesArgs - The arguments for getting player summaries, including the Steam API key and Steam ID
+ * @return - Player object or undefined on error
+ *
+ * Calls the getSteamPlayerSummaries asynchronous function to fetch player summaries from the Steam API
+ */
 onGetPlayerSummaries(
     async (
         sendResponse: CallableFunction,
@@ -160,6 +190,14 @@ onGetPlayerSummaries(
     },
 );
 
+/** Handle getSteamPlaytime message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getSteamPlaytimeArgs - The arguments for getting Steam playtime, including the Steam API key and Steam ID
+ * @return - Player object or undefined on error
+ *
+ * Calls the getSteamPlaytime asynchronous function to fetch playtime data from the Steam API
+ */
 onGetSteamPlaytime(
     async (
         sendResponse: CallableFunction,
@@ -182,6 +220,14 @@ onGetSteamPlaytime(
     },
 );
 
+/** Handle getSteamKillsDeaths message
+ *
+ * @param sendResponse - The function to send the response back to the caller
+ * @param getSteamKillsDeathsArgs - The arguments for getting Steam kills/deaths, including the Steam API key and Steam ID
+ * @return - Player object or undefined on error
+ *
+ * Calls the getSteamKillsDeaths asynchronous function to fetch kills/deaths data from the Steam API
+ */
 onGetSteamKillsDeaths(
     async (
         sendResponse: CallableFunction,
