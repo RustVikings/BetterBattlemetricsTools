@@ -8,6 +8,14 @@ type getSteamPlaytimeResponse = {
     };
 };
 
+/**
+ * Setup message and listener handler for getting player playtime from Steam API
+ *
+ * @param steamApiKey - The API key for Steam
+ * @param steamID - The Steam ID of the player to retrieve playtime for
+ *
+ * @returns A promise that resolves to the player playtime data
+ */
 export const [getSteamPlaytime, onGetSteamPlaytime] = createMessage<
     getSteamPlaytimeArgs,
     getSteamPlaytimeResponse

@@ -4,13 +4,18 @@ import {
     BattlemetricsCurrentServer,
 } from "./battlemetrics";
 import { SteamPlayerProfile } from "./steam";
-import { OwnServer } from "./options";
 
+/**
+ * Combined player profile information from Battlemetrics and Steam APIs
+ */
 export type PlayerProfile = {
     battlemetrics: BattlemetricsPlayerProfile;
     steam: SteamPlayerProfile;
 };
 
+/**
+ * Combined player information from Battlemetrics and Steam APIs
+ */
 export type Player = {
     id: string;
     steamID: string;
@@ -19,22 +24,9 @@ export type Player = {
     current_server: BattlemetricsCurrentServer;
 };
 
-export type Options = {
-    arkan?: boolean;
-    battlemetricsApiToken: string;
-    battlemetricsApiTokenIsValid?: boolean;
-    guardian?: boolean;
-    ownServers: OwnServer[];
-    refreshingServers?: boolean;
-    rustAdmin?: boolean;
-    rustStats?: boolean;
-    saveButtonText?: string;
-    saveEnabled?: boolean;
-    serverArmour?: boolean;
-    steamApiKey: string;
-    steamApiKeyIsValid?: boolean;
-};
-
+/**
+ * Loading states for various data fetches
+ */
 export interface LoadingState {
     options: boolean;
     playerInfo: boolean;
@@ -46,11 +38,17 @@ export interface LoadingState {
     steamKillsDeaths?: boolean;
 }
 
+/**
+ * Types for Auto Refresh state and setter
+ */
 export type AutoreRefreshType = {
     autoRefresh: boolean;
     setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
+/**
+ * Export all types from this module
+ */
 export {
     BattlemetricsAnticheatStats,
     BattlemetricsArkanMessageTypes,
@@ -72,7 +70,5 @@ export {
     BattlemetricsReportTypes,
 } from "./battlemetrics";
 export { SteamAppId } from "./steam";
-
-export { OwnServerType, OwnServer } from "./options";
-
+export { OwnServerType, OwnServer, Options } from "./options";
 export { SteamPlayerProfile } from "./steam";
