@@ -98,14 +98,13 @@ export async function getPlayerActivity(
                     default:
                         stats.kd.deaths_24h++;
                 }
-            } else {
-                switch (activity.attributes.data.killer_id) {
-                    case player_id_num:
-                        stats.kd.kills++;
-                        break;
-                    default:
-                        stats.kd.deaths++;
-                }
+            }
+            switch (activity.attributes.data.killer_id) {
+                case player_id_num:
+                    stats.kd.kills++;
+                    break;
+                default:
+                    stats.kd.deaths++;
             }
         } else if (messageType === "unknown") {
             if (arkanWarnings) {

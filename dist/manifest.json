@@ -17,7 +17,7 @@
                 "*://www.battlemetrics.com/*"
             ],
             "js": ["main.js"],
-            "run_at": "document_idle"
+            "run_at": "document_end"
         }
     ],
 
@@ -33,7 +33,6 @@
     "permissions": [
         "tabs",
         "activeTab",
-        "notifications",
         "scripting",
         "storage",
         "webNavigation"
@@ -42,8 +41,7 @@
     "background": {
         "service_worker": "worker.js",
         "type": "module",
-        "scripts": ["worker.js"],
-        "persistent": "false"
+        "scripts": ["worker.js"]
     },
     "web_accessible_resources": [
         {

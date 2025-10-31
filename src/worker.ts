@@ -38,18 +38,27 @@ Browser.runtime.onInstalled.addListener(() => {
 
 // Listen for navigation events to detect page changes and render the panel
 Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
-    Browser.tabs.sendMessage(details.tabId, {
-        action: "render-player-panel",
-        details,
-    });
+    if (details.frameId === 0) {
+        console.log("History state updated, sending message:", details.tabId);
+        Browser.tabs.sendMessage(details.tabId, {
+            action: "render-player-panel",
+            details,
+        });
+    }
 });
 
 // Also listen for completed navigation events and render the panel
 Browser.webNavigation.onCompleted.addListener((details) => {
-    Browser.tabs.sendMessage(details.tabId, {
-        action: "render-player-panel",
-        details,
-    });
+    if (details.frameId === 0) {
+        console.log(
+            "Main frame navigation completed, sending message:",
+            details.tabId,
+        );
+        Browser.tabs.sendMessage(details.tabId, {
+            action: "render-player-panel",
+            details,
+        });
+    }
 });
 
 // Handle getServers message
@@ -183,8 +192,6 @@ onGetSteamKillsDeaths(
                 getSteamKillsDeathsArgs.steamApiKey,
                 getSteamKillsDeathsArgs.steamID,
             )) as { activity: typeof Player };
-
-            console.log("Steam Kills/Deaths Player Data:", Player);
 
             return sendResponse({
                 Player,

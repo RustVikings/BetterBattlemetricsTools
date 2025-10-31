@@ -4,6 +4,7 @@ import {
     BattlemetricsReportStats,
 } from "@src/types/battlemetrics";
 import {
+    // AutoreRefreshType,
     BattlemetricsKDStats,
     BattlemetricsPlaytimeStats,
     Options,
@@ -18,11 +19,22 @@ import { PlayerBanner } from "./components/playerbanner/";
 import { PlayerInfo } from "./components/playerinfo/component";
 import Browser from "webextension-polyfill";
 import css from "./styles.module.css";
-import React, { JSX, createContext, useState, useEffect } from "react";
+import React, { JSX, createContext, useState, useEffect, use } from "react";
+import { REFRESH_PLAYER_ACTIVITY_INTERVAL_MS } from "@src/config/";
 
 export const PlayerContext = createContext<Player | null>(null);
 export const LoadingContext = createContext<LoadingState | null>(null);
 export const OptionsContext = createContext<Options | undefined>(undefined);
+
+export type AutoreRefreshType = {
+    autoRefresh: boolean;
+    setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+export const AutoRefreshContext = createContext<AutoreRefreshType>({
+    autoRefresh: false,
+    setAutoRefresh: () => {},
+});
 
 export function Panel(): JSX.Element {
     // Get the player ID from the URL
@@ -98,6 +110,8 @@ export function Panel(): JSX.Element {
         options: true,
         playerInfo: true,
         playerActivity: true,
+        playerActivityInit: false,
+        refreshingPlayerActivity: false,
         steamProfile: true,
         steamPlaytime: true,
         steamKillsDeaths: true,
@@ -108,6 +122,7 @@ export function Panel(): JSX.Element {
     const [Options, setOptions] = useState<Options>(defaultOptions);
     const [Player, setPlayer] = useState<Player>(defaultPlayer);
     const [Loading, setLoading] = useState<LoadingState>(detfaultLoadingState);
+    const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
     async function fetchOptions() {
         setLoading((prevLoading) => ({
@@ -148,10 +163,10 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                console.log("Fetched player info:", player);
+                // console.log("Fetched player info:", player);
 
                 if (player) {
-                    console.log("Updating player info:", player);
+                    // console.log("Updating player info:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         steamID: player.steamID,
@@ -207,6 +222,7 @@ export function Panel(): JSX.Element {
                 setLoading((prevLoading) => ({
                     ...prevLoading,
                     playerActivity: true,
+                    refreshingPlayerActivity: true,
                 }));
                 const response = await getPlayerActivity({
                     battlemetricsApiToken: Options.battlemetricsApiToken,
@@ -217,10 +233,10 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                console.log("Fetched player activity:", player);
+                // console.log("Fetched player activity:", player);
 
                 if (player) {
-                    console.log("Updating player activity:", player);
+                    // console.log("Updating player activity:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         stats: {
@@ -232,6 +248,12 @@ export function Panel(): JSX.Element {
                         ...prevLoading,
                         playerActivity: false,
                     }));
+                    if (!Loading.playerActivityInit) {
+                        setLoading((prevLoading) => ({
+                            ...prevLoading,
+                            playerActivityInit: true,
+                        }));
+                    }
                 } else {
                     setLoading((prevLoading) => ({
                         ...prevLoading,
@@ -239,7 +261,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.error("Panel: fetchPlayerActivity error", e);
+                console.log("Panel: fetchPlayerActivity error", e);
             }
         }
     }
@@ -258,10 +280,10 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                console.log("Fetched Steam player profile:", player);
+                // console.log("Fetched Steam player profile:", player);
 
                 if (player) {
-                    console.log("Updating Steam player profile:", player);
+                    // console.log("Updating Steam player profile:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         profile: {
@@ -283,7 +305,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.error("Panel: fetchSteamProfile error", e);
+                console.log("Panel: fetchSteamProfile error", e);
             }
         }
     }
@@ -302,10 +324,10 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                console.log("Fetched Steam playtime:", player);
+                // console.log("Fetched Steam playtime:", player);
 
                 if (player) {
-                    console.log("Updating Steam playtime:", player);
+                    // console.log("Updating Steam playtime:", player);
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         stats: {
@@ -327,7 +349,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.error("Panel: fetchSteamPlaytime error", e);
+                console.log("Panel: fetchSteamPlaytime error", e);
             }
         }
     }
@@ -347,10 +369,10 @@ export function Panel(): JSX.Element {
 
                 const player = response.Player.player;
 
-                console.log("Fetched Steam Kills/Deaths:", player);
+                // console.log("Fetched Steam Kills/Deaths:", player);
 
                 if (player) {
-                    console.log("Updating Steam Kills/Deaths:", player);
+                    // console.log("Updating Steam Kills/Deaths:", player);
                     if (
                         player.stats.kd.kills > Player.stats.kd.kills ||
                         !Player.stats.kd.kills
@@ -377,7 +399,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.error("Panel: fetchSteamKillsDeaths error", e);
+                console.log("Panel: fetchSteamKillsDeaths error", e);
             }
         }
     }
@@ -392,24 +414,41 @@ export function Panel(): JSX.Element {
     }, [Options.battlemetricsApiToken, Options.ownServers, Player.id]);
 
     useEffect(() => {
+        fetchSteamKillsDeaths();
         fetchSteamPlayerProfile();
         fetchSteamPlaytime();
-        fetchSteamKillsDeaths();
-    }, [Player.steamID, Options.steamApiKey, Loading.playerActivity]);
+    }, [Player.steamID, Options.steamApiKey, Loading.playerActivityInit]);
+
+    useEffect(() => {
+        console.log(
+            "Auto-refresh is now",
+            autoRefresh ? "enabled" : "disabled",
+        );
+        if (autoRefresh) {
+            const interval = setInterval(() => {
+                fetchPlayerActivity();
+            }, REFRESH_PLAYER_ACTIVITY_INTERVAL_MS);
+            return () => clearInterval(interval);
+        } else {
+            return;
+        }
+    }, [autoRefresh]);
 
     // console.log("Rendering Panel component with Player:", Player);
 
     return (
-        <PlayerContext.Provider value={Player}>
-            <LoadingContext.Provider value={Loading}>
-                <OptionsContext.Provider value={Options}>
-                    <div className={css.box}>
-                        <PlayerBanner />
-                        <CurrentServer />
-                        <PlayerInfo />
-                    </div>
-                </OptionsContext.Provider>
-            </LoadingContext.Provider>
-        </PlayerContext.Provider>
+        <AutoRefreshContext.Provider value={{ autoRefresh, setAutoRefresh }}>
+            <PlayerContext.Provider value={Player}>
+                <LoadingContext.Provider value={Loading}>
+                    <OptionsContext.Provider value={Options}>
+                        <div className={css.box}>
+                            <PlayerBanner />
+                            <CurrentServer />
+                            <PlayerInfo />
+                        </div>
+                    </OptionsContext.Provider>
+                </LoadingContext.Provider>
+            </PlayerContext.Provider>
+        </AutoRefreshContext.Provider>
     );
 }

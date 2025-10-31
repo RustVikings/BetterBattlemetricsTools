@@ -39,10 +39,14 @@ export interface LoadingState {
     options: boolean;
     playerInfo: boolean;
     playerActivity: boolean;
+    refreshingPlayerActivity: boolean;
+    playerActivityInit: boolean;
     steamProfile: boolean;
     steamPlaytime: boolean;
     steamKillsDeaths?: boolean;
 }
+
+export type AutoreRefreshType = [boolean, () => void];
 
 export {
     BattlemetricsAnticheatStats,

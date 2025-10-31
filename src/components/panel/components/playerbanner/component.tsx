@@ -3,17 +3,17 @@ import css from "../../styles.module.css";
 import classNames from "classnames";
 import { PlayerContext, LoadingContext } from "@src/components/panel/";
 import { Player, LoadingState } from "@src/types";
+import { AutoRefreshContext } from "../../component";
 
 export function PlayerBanner(): JSX.Element {
     const Player = useContext(PlayerContext) as Player;
     const Loading = useContext(LoadingContext) as LoadingState;
     const steamProfile = Player.profile.steam;
+    const { autoRefresh, setAutoRefresh } = useContext(AutoRefreshContext);
 
     const handleOnChangeRefresh = (e: ChangeEvent<HTMLInputElement>) => {
-        return true;
+        setAutoRefresh(e.target.checked ? true : false);
     };
-
-    const autoRefresh = true;
 
     return (
         <div className={classNames(css.player_banner, css.section)}>

@@ -1,5 +1,5 @@
 @import "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap";
-@tailwind base;
+/* @tailwind base; */
 @tailwind components;
 @tailwind utilities;
 
@@ -29,6 +29,7 @@
     .section {
         @apply border-b items-start;
         border-bottom-color: var(--bbt-divider);
+        border-bottom-style: solid;
         margin: 16px 0;
         padding-bottom: 16px;
         &:last-child {

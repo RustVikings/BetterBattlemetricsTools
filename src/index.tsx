@@ -1,9 +1,11 @@
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import React from "react";
 import { Panel } from "./components/panel/component";
 import "./css/app.css";
 import Browser from "webextension-polyfill";
 import waitForElement from "./utils/waitforelement";
+
+let root: Root = {} as Root;
 
 // Listen for messages from the background script
 Browser.runtime.onMessage.addListener((message: unknown) => {
@@ -11,18 +13,21 @@ Browser.runtime.onMessage.addListener((message: unknown) => {
         waitForElement("#RCONPlayerPage", (element: Element) => {
             // Check if the extension element already exists
             const extensionElement = document.getElementById("BRT");
+
             if (extensionElement) {
-                // If it exists, just render the Panel into it
-                const root = createRoot(extensionElement);
-                root.render(<Panel />);
+                if (root === ({} as Root)) {
+                    console.log("Creating new root for existing element");
+                    root = createRoot(extensionElement);
+                }
             } else {
-                // If it doesn't exist, create it and then render the Panel
                 const div = document.createElement("div");
                 div.id = "BRT";
                 element.prepend(div);
-                const root = createRoot(div);
-                root.render(<Panel />);
+                console.log("Creating new root for new element");
+                root = createRoot(div);
             }
+            console.log("root:", root);
+            root.render(<Panel />);
         });
     }
 });

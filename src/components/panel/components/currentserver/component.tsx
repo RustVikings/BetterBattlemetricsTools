@@ -24,12 +24,12 @@ export function CurrentServer(): JSX.Element {
                 <DataPoint
                     label="Current Server"
                     value={
-                        Loading.playerActivity
+                        Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.attributes.name || "Offline"
                     }
                     title={
-                        Loading.playerActivity
+                        Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.attributes.name || "Offline"
                     }
@@ -37,7 +37,7 @@ export function CurrentServer(): JSX.Element {
                 <DataPoint
                     label="Server address"
                     value={
-                        Loading.playerActivity
+                        Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.attributes.ip &&
                               currentServer?.attributes.port
@@ -45,7 +45,7 @@ export function CurrentServer(): JSX.Element {
                             : "Unavailable"
                     }
                     title={
-                        Loading.playerActivity
+                        Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.attributes.ip &&
                               currentServer?.attributes.port

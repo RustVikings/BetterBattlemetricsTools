@@ -8,10 +8,10 @@ export async function getSteamKillsDeaths(
     const response = await fetch(
         `http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=${RUST_APP_ID}&key=${steamApiKey}&steamid=${steamID}`,
     );
-    const toJson = await response.json();
-    const stats = toJson.playerstats.stats;
 
-    console.log("Fetched Steam Kills/Deaths Data:", stats);
+    const toJson = await response.json();
+
+    const stats = toJson.playerstats.stats;
 
     const Player: Player = {} as Player;
     Player.stats = {
