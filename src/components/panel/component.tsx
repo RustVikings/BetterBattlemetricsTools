@@ -268,7 +268,19 @@ export function Panel(): JSX.Element {
                         ...prevPlayer,
                         stats: {
                             ...prevPlayer.stats,
-                            ...player.stats,
+                            kd: {
+                                ...prevPlayer.stats.kd,
+                                kills_24h: player.stats.kd.kills_24h,
+                                deaths_24h: player.stats.kd.deaths_24h,
+                            },
+                            reports: {
+                                ...prevPlayer.stats.reports,
+                                ...player.stats.reports,
+                            },
+                            anticheat: {
+                                ...prevPlayer.stats.anticheat,
+                                ...player.stats.anticheat,
+                            },
                         },
                     }));
                     setLoading((prevLoading) => ({
@@ -400,23 +412,23 @@ export function Panel(): JSX.Element {
             identifiers = document.querySelectorAll(
                 "td[data-title=Identifier] + td[data-title=Type]",
             );
-        });
-        identifiers.forEach((identifier) => {
-            if (identifier.textContent.includes("IP")) {
-                const matchedIP =
-                    identifier.previousSibling?.textContent?.match(
-                        /(\d{1,3}\.){3}\d{1,3}/,
-                    )?.[0];
-                const el = identifier.previousSibling as HTMLElement;
-                const ipEl = el.querySelector(".css-q39y9k");
-                if (matchedIP) {
-                    const ip = Player.ips.find((ip) => ip.ip === matchedIP);
-                    if (ip) {
-                        if (ipEl)
-                            ipEl.innerHTML = `${ip.ip}<br/><span class="small">ISP: <a href="https://www.google.com/search?q=${ip.metadata.connectionInfo.isp}" title="Search: ${ip.metadata.connectionInfo.isp} " target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.isp}</a>  | ASN: <a href="https://ipinfo.io/${ip.metadata.connectionInfo.asn}" title="Search: ${ip.metadata.connectionInfo.asn}" target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.asn}</a></span>`;
+            identifiers.forEach((identifier) => {
+                if (identifier.textContent.includes("IP")) {
+                    const matchedIP =
+                        identifier.previousSibling?.textContent?.match(
+                            /(\d{1,3}\.){3}\d{1,3}/,
+                        )?.[0];
+                    const el = identifier.previousSibling as HTMLElement;
+                    const ipEl = el.querySelector(".css-q39y9k");
+                    if (matchedIP) {
+                        const ip = Player.ips.find((ip) => ip.ip === matchedIP);
+                        if (ip) {
+                            if (ipEl)
+                                ipEl.innerHTML = `${ip.ip}<br/><span class="small">ISP: <a href="https://www.google.com/search?q=${ip.metadata.connectionInfo.isp}" title="Search: ${ip.metadata.connectionInfo.isp} " target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.isp}</a>  | ASN: <a href="https://ipinfo.io/${ip.metadata.connectionInfo.asn}" title="Search: ${ip.metadata.connectionInfo.asn}" target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.asn}</a></span>`;
+                        }
                     }
                 }
-            }
+            });
         });
     }
 
