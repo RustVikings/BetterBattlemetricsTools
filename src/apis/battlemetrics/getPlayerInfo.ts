@@ -2,6 +2,7 @@ import {
     BattlemetricsCurrentServer,
     BattlemetricsCurrentServerAttributes,
     BattlemetricsPlayerStats,
+    BattlemetricsPlayerIPs,
     OwnServer,
     Player,
     PlayerProfile,
@@ -25,7 +26,7 @@ export async function getPlayerInfo(
     ownServers: OwnServer[],
 ): Promise<unknown> {
     const apiResponse = await fetch(
-        `https://api.battlemetrics.com/players/${playerId}?include=server,identifier&fields[server]=name,ip,port&filter[identifiers]=steamID&access_token=${battlemetricsApiToken}`,
+        `https://api.battlemetrics.com/players/${playerId}?include=server,identifier&fields[server]=name,ip,port&filter[identifiers]=steamID,ip&access_token=${battlemetricsApiToken}`,
     );
     const toJson = await apiResponse.json();
 
@@ -62,6 +63,7 @@ export async function getPlayerInfo(
         online: false,
         attributes: {} as BattlemetricsCurrentServerAttributes,
     } as BattlemetricsCurrentServer;
+    Player.ips = [] as BattlemetricsPlayerIPs[];
 
     /* save battlemetrics profile to Player object */
     Player.profile.battlemetrics = profile;
@@ -106,9 +108,26 @@ export async function getPlayerInfo(
                         ip: server.attributes.ip,
                         port: server.attributes.port,
                         joined: new Date(server.meta.lastSeen as string),
+                        id: server.id,
                     },
                 };
             }
+        }
+    }
+
+    for (const identifier of toJson.included.filter(
+        (item: { type: string }) => item.type === "identifier",
+    )) {
+        if (identifier.attributes.type === "ip") {
+            if (!Player.ips) {
+                Player.ips = [];
+            }
+            Player.ips.push({
+                id: identifier.id,
+                ip: identifier.attributes.identifier,
+                last_seen: new Date(identifier.attributes.lastSeen),
+                metadata: { ...identifier.attributes.metadata },
+            });
         }
     }
 

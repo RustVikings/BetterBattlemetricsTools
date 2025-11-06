@@ -9,51 +9,61 @@ import { RUST_APP_ID } from "@src/config/";
  *
  * @returns A promise that resolves to the player's kills and deaths data
  */
-export async function getSteamKillsDeaths(
+export async function getUserStatsForGame(
     steamApiKey: string,
     steamID: string,
 ): Promise<unknown> {
-    const response = await fetch(
-        `http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=${RUST_APP_ID}&key=${steamApiKey}&steamid=${steamID}`,
-    );
+    const API_URL = `http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=${RUST_APP_ID}&key=${steamApiKey}&steamid=${steamID}`;
 
-    const toJson = await response.json();
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            return Promise.reject(
+                `Error fetching Steam Kills/Deaths data: ${response.status} ${response.statusText}`,
+            );
+        } else {
+            const toJson = await response.json();
 
-    const stats = toJson.playerstats.stats;
+            const stats = toJson.playerstats.stats;
 
-    const Player: Player = {} as Player;
-    Player.stats = {
-        kd: {
-            kills: 0,
-            deaths: 0,
-        },
-    } as BattlemetricsPlayerStats;
+            const Player: Player = {} as Player;
+            Player.stats = {
+                kd: {
+                    kills: 0,
+                    deaths: 0,
+                },
+            } as BattlemetricsPlayerStats;
 
-    if (!stats || stats.length === 0) {
-        console.log("No Rust game data found for this SteamID.");
-        Player.stats.kd.kills = 0;
-        Player.stats.kd.deaths = 0;
-    } else {
-        /** Extract relevant stats from the game data */
-        const getStats = (statName: string) =>
-            stats.find(
-                (stat: { name: string; value: number }) =>
-                    stat.name === statName,
-            )?.value || 0;
-        Player.stats.kd.kills = getStats("kill_player");
-        Player.stats.kd.deaths =
-            getStats("deaths") -
-            getStats("death_suicide") -
-            getStats("death_fall") -
-            getStats("death_selfinflicted") -
-            getStats("death_entity") -
-            getStats("death_wolf") -
-            getStats("death_bear");
+            if (!stats || stats.length === 0) {
+                console.log("No Rust game data found for this SteamID.");
+                Player.stats.kd.kills = 0;
+                Player.stats.kd.deaths = 0;
+            } else {
+                /** Extract relevant stats from the game data */
+                const getStats = (statName: string) =>
+                    stats.find(
+                        (stat: { name: string; value: number }) =>
+                            stat.name === statName,
+                    )?.value || 0;
+                Player.stats.kd.kills = getStats("kill_player");
+                Player.stats.kd.deaths =
+                    getStats("deaths") -
+                    getStats("death_suicide") -
+                    getStats("death_fall") -
+                    getStats("death_selfinflicted") -
+                    getStats("death_entity") -
+                    getStats("death_wolf") -
+                    getStats("death_bear");
+            }
+
+            console.log("Steam Kills/Deaths Data:", Player);
+
+            return {
+                player: Player,
+            };
+        }
+    } catch (error) {
+        console.error("Error fetching Steam Kills/Deaths data:", error);
+        throw error;
     }
-
-    console.log("Steam Kills/Deaths Data:", Player);
-
-    return {
-        player: Player,
-    };
 }

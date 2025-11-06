@@ -36,6 +36,8 @@ export function PlayerInfo(): JSX.Element {
                     value={
                         Loading.steamProfile
                             ? "Loading..."
+                            : steamProfile?.communityvisibilitystate === 2
+                            ? "Friends Only"
                             : steamProfile?.communityvisibilitystate === 3
                             ? "Public"
                             : "Private"
@@ -52,18 +54,26 @@ export function PlayerInfo(): JSX.Element {
                     value={
                         Loading.steamProfile
                             ? "Loading..."
-                            : moment
-                                  .unix(steamProfile?.timecreated)
+                            : steamProfile?.timecreated
+                            ? moment
+                                  .unix(steamProfile.timecreated)
                                   .format("MMM DD, YYYY") +
                               " (" +
                               moment
-                                  .unix(steamProfile?.timecreated)
+                                  .unix(steamProfile.timecreated)
                                   .fromNow(true) +
                               ")"
+                            : "Unknown"
                     }
-                    title={`Account created: ${moment(
-                        battlemetricsProfile?.createdAt as Date,
-                    ).format("LLLL")}`}
+                    title={
+                        Loading.steamProfile
+                            ? "Loading..."
+                            : steamProfile?.timecreated
+                            ? `Created: ${moment
+                                  .unix(steamProfile.timecreated)
+                                  .format("LLLL")}`
+                            : "Steam profile is private: account age unavailable"
+                    }
                 />
                 <DataPoint
                     label="Battlemetrics profile age"

@@ -2,6 +2,7 @@ import {
     BattlemetricsPlayerProfile,
     BattlemetricsPlayerStats,
     BattlemetricsCurrentServer,
+    BattlemetricsPlayerIPs,
 } from "./battlemetrics";
 import { SteamPlayerProfile } from "./steam";
 
@@ -22,6 +23,7 @@ export type Player = {
     profile: PlayerProfile;
     stats: BattlemetricsPlayerStats;
     current_server: BattlemetricsCurrentServer;
+    ips: BattlemetricsPlayerIPs[];
 };
 
 /**
@@ -68,6 +70,7 @@ export {
     BattlemetricsPlaytimeTypes,
     BattlemetricsReportStats,
     BattlemetricsReportTypes,
+    BattlemetricsPlayerIPs,
 } from "./battlemetrics";
 export { SteamAppId } from "./steam";
 export { OwnServerType, OwnServer, Options } from "./options";

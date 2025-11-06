@@ -70,6 +70,24 @@ export type BattlemetricsAnticheatStats = {
     };
 };
 
+export type BattlemetricsPlayerIPs = {
+    id: number;
+    ip: string;
+    last_seen: Date;
+    metadata: {
+        country: string;
+        lastCheck: Date;
+        connectionInfo: {
+            tor: boolean;
+            datacenter: boolean;
+            proxy: boolean;
+            asn: string;
+            block: number;
+            isp: string;
+        };
+    };
+};
+
 /**
  * Player stats from Battlemetrics and Steam APIs
  */
@@ -131,6 +149,7 @@ export type BattlemetricsCurrentServerAttributes = {
     ip: string;
     port: number;
     joined: Date;
+    id: string;
 };
 
 /** Current server information from Battlemetrics API */

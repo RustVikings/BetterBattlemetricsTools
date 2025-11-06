@@ -8,7 +8,7 @@
     --bm-bg-color: #222;
     --bbt-link-color: #9d9d9d;
     --bbt-red: #ca3d3d;
-    --bbt-amber: #d99400;
+    --bbt-amber: #ca7300;
     --bbt-green: #61a138;
     --bbt-unknown: #6b6b6b;
     --bbt-divider: #3a3a3a;
@@ -18,6 +18,11 @@
 
     @layer bg-[var(--bm-bg-color) ];
     margin-top: 16px;
+
+    .small {
+        font-size: 10px;
+        @apply font-mono;
+    }
 
     a {
         color: var(--bbt-link-color);
@@ -66,6 +71,12 @@
         @apply mb-2;
         @apply flex flex-col;
         text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
+
+        a {
+            @apply text-white;
+            @apply hover:underline;
+            @apply hover:text-white active:text-white visited:text-white;
+        }
 
         &.layout_horizontal {
             @apply flex-row;

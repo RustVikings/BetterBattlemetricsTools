@@ -26,9 +26,9 @@ export function Playtime(): JSX.Element {
         switch (true) {
             case percentage === 0:
                 return "unknown";
-            case percentage > 0 && percentage <= 20:
+            case percentage > 0 && percentage <= 40:
                 return "normal";
-            case percentage > 20 && percentage <= 50:
+            case percentage > 40 && percentage <= 80:
                 return "warning";
             default:
                 return "danger";
@@ -57,10 +57,10 @@ export function Playtime(): JSX.Element {
                                   playtime.steam,
                                   playtime.battlemetrics,
                               ) > 0
-                            ? `${boostedPercentage(
+                            ? `Steam/BM: ${boostedPercentage(
                                   playtime.steam,
                                   playtime.battlemetrics,
-                              )}% boosted`
+                              )}% `
                             : "Unknown"
                     }
                     severity={

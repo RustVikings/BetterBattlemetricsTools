@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Options } from "../components/options";
-import waitForElement from "../utils/waitforelement";
+import waitForElement from "../utils/dom";
 import "../css/options.css";
 
 waitForElement("#options_container", () => {

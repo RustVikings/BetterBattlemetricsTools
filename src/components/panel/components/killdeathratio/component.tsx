@@ -121,7 +121,7 @@ export function KillDeathRatio({
     const Loading = useContext(LoadingContext) as LoadingState;
     const kd = Player.stats.kd;
 
-    // // console.log("Player", Player);
+    // console.log("Player", Player);
 
     const data = {
         labels,
@@ -165,7 +165,9 @@ export function KillDeathRatio({
                 <div className={css.title}>{title}</div>
                 <Tag
                     value={
-                        Loading.playerActivity ? "Loading..." : `K/D ${kdRatio}`
+                        Loading.playerActivity
+                            ? "Loading..."
+                            : `K/D: ${kdRatio}`
                     }
                     severity={
                         Loading.playerActivity

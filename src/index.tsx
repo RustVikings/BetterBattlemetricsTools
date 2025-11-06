@@ -1,9 +1,9 @@
 import { createRoot, Root } from "react-dom/client";
-import React from "react";
+import React, { StrictMode } from "react";
 import { Panel } from "./components/panel/component";
 import "./css/app.css";
 import Browser from "webextension-polyfill";
-import waitForElement from "./utils/waitforelement";
+import waitForElement from "./utils/dom";
 
 let root: Root = {} as Root;
 

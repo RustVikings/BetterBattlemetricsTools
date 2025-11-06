@@ -22,7 +22,10 @@ export type ProfileStateTypes = 1 | undefined;
 
 /** Types for Steam Community Visibility State
  */
-export type CommunityVisibilityStateTypes = 1 /* Private */ | 3 /* Public */;
+export type CommunityVisibilityStateTypes =
+    | 1 /* Private */
+    | 2 /* Friends Only */
+    | 3 /* Public */;
 
 /** Player profile information from Steam API */
 export type SteamPlayerProfile = {

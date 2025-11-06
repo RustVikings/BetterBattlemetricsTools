@@ -19,8 +19,9 @@ import { PlayerBanner } from "./components/playerbanner/";
 import { PlayerInfo } from "./components/playerinfo/component";
 import Browser from "webextension-polyfill";
 import css from "./styles.module.css";
-import React, { JSX, createContext, useState, useEffect, use } from "react";
+import React, { JSX, createContext, useState, useEffect } from "react";
 import { REFRESH_PLAYER_ACTIVITY_INTERVAL_MS } from "@src/config/";
+import waitForElement from "@src/utils/dom";
 
 export const PlayerContext = createContext<Player | null>(null);
 export const LoadingContext = createContext<LoadingState | null>(null);
@@ -30,6 +31,8 @@ export const AutoRefreshContext = createContext<AutoreRefreshType>({
     autoRefresh: false,
     setAutoRefresh: () => {},
 });
+
+let identifiers: NodeListOf<Element>;
 
 export function Panel(): JSX.Element {
     // Get the player ID from the URL
@@ -97,12 +100,14 @@ export function Panel(): JSX.Element {
                 ip: "",
                 port: 0,
                 joined: new Date(),
+                id: "",
             },
         },
+        ips: [],
     };
 
     // Default state for loading
-    const detfaultLoadingState: LoadingState = {
+    const defaultLoadingState: LoadingState = {
         options: true,
         playerInfo: true,
         playerActivity: true,
@@ -123,15 +128,22 @@ export function Panel(): JSX.Element {
      */
     const [Options, setOptions] = useState<Options>(defaultOptions);
     const [Player, setPlayer] = useState<Player>(defaultPlayer);
-    const [Loading, setLoading] = useState<LoadingState>(detfaultLoadingState);
+    const [Loading, setLoading] = useState<LoadingState>(defaultLoadingState);
     const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
 
+    /** Fetch Options
+     * Fetch the user's options from storage and update the state.
+     * If options are not set, use default options.
+     * Updates the Loading state accordingly.
+     */
     async function fetchOptions() {
         setLoading((prevLoading) => ({
             ...prevLoading,
             options: true,
         }));
+
         const Options = (await Browser.storage.local.get()) as Options;
+
         if (Options !== null && Options !== undefined) {
             if (
                 !Options.battlemetricsApiToken ||
@@ -159,7 +171,7 @@ export function Panel(): JSX.Element {
      * info from the Battlemetrics API. Updates the Player state with the fetched data.
      */
     async function fetchPlayerInfo() {
-        if (Options.battlemetricsApiToken && Player?.id) {
+        if (Options.battlemetricsApiToken && Player.id) {
             try {
                 setLoading((prevLoading) => ({
                     ...prevLoading,
@@ -172,16 +184,11 @@ export function Panel(): JSX.Element {
                     ownServers: Options.ownServers,
                 });
 
-                const player = response.Player.player;
-
-                // console.log("Fetched player info:", player);
-
-                if (player) {
-                    // console.log("Updating player info:", player);
+                if (response.Player) {
+                    const player = response.Player.player;
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         steamID: player.steamID,
-                        id: player.id,
                         profile: {
                             ...prevPlayer.profile,
                             battlemetrics: {
@@ -204,6 +211,7 @@ export function Panel(): JSX.Element {
                                 ...player.current_server.attributes,
                             },
                         },
+                        ips: player.ips,
                     }));
                     setLoading((prevLoading) => ({
                         ...prevLoading,
@@ -221,6 +229,8 @@ export function Panel(): JSX.Element {
             }
         }
     }
+
+    // console.log("Panel: Rendering with Player:", Player);
 
     /** Fetch Player Activity
      *
@@ -252,9 +262,8 @@ export function Panel(): JSX.Element {
                     guardianWarnings: Options.guardian,
                 });
 
-                const player = response.Player.player;
-
-                if (player) {
+                if (response.Player) {
+                    const player = response.Player.player;
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         stats: {
@@ -304,9 +313,8 @@ export function Panel(): JSX.Element {
                     steamID: Player.steamID,
                 });
 
-                const player = response.Player.player;
-
-                if (player) {
+                if (response.Player) {
+                    const player = response.Player.player;
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         profile: {
@@ -353,12 +361,8 @@ export function Panel(): JSX.Element {
                     steamID: Player.steamID,
                 });
 
-                const player = response.Player.player;
-
-                // console.log("Fetched Steam playtime:", player);
-
-                if (player) {
-                    // console.log("Updating Steam playtime:", player);
+                if (response.Player) {
+                    const player = response.Player.player;
                     setPlayer((prevPlayer) => ({
                         ...prevPlayer,
                         stats: {
@@ -386,6 +390,37 @@ export function Panel(): JSX.Element {
     }
 
     /**
+     * Add ISP Information to Identifiers
+     *
+     * Uses the Player.ips data to add ISP and ASN information to the
+     * identifiers displayed on the Battlemetrics player page.
+     */
+    async function addIspInformationToIdentifiers() {
+        waitForElement("td[data-title=Identifier]", () => {
+            identifiers = document.querySelectorAll(
+                "td[data-title=Identifier] + td[data-title=Type]",
+            );
+        });
+        identifiers.forEach((identifier) => {
+            if (identifier.textContent.includes("IP")) {
+                const matchedIP =
+                    identifier.previousSibling?.textContent?.match(
+                        /(\d{1,3}\.){3}\d{1,3}/,
+                    )?.[0];
+                const el = identifier.previousSibling as HTMLElement;
+                const ipEl = el.querySelector(".css-q39y9k");
+                if (matchedIP) {
+                    const ip = Player.ips.find((ip) => ip.ip === matchedIP);
+                    if (ip) {
+                        if (ipEl)
+                            ipEl.innerHTML = `${ip.ip}<br/><span class="small">ISP: <a href="https://www.google.com/search?q=${ip.metadata.connectionInfo.isp}" title="Search: ${ip.metadata.connectionInfo.isp} " target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.isp}</a>  | ASN: <a href="https://ipinfo.io/${ip.metadata.connectionInfo.asn}" title="Search: ${ip.metadata.connectionInfo.asn}" target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.asn}</a></span>`;
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * Fetch Steam Kills/Deaths
      *
      * @param Options.steamApiKey - The Steam API key
@@ -395,7 +430,7 @@ export function Panel(): JSX.Element {
      * kills and deaths from the Steam API. Updates the Player state with the
      * fetched data if it is greater than the existing data.
      */
-    async function fetchSteamKillsDeaths() {
+    async function fetchUserStatsForGames() {
         if (Player.steamID && Options.steamApiKey) {
             try {
                 setLoading((prevLoading) => ({
@@ -408,12 +443,8 @@ export function Panel(): JSX.Element {
                     steamID: Player.steamID,
                 });
 
-                const player = response.Player.player;
-
-                // console.log("Fetched Steam Kills/Deaths:", player);
-
-                if (player) {
-                    // console.log("Updating Steam Kills/Deaths:", player);
+                if (response.Player) {
+                    const player = response.Player.player;
                     if (
                         player.stats.kd.kills > Player.stats.kd.kills ||
                         !Player.stats.kd.kills
@@ -466,17 +497,14 @@ export function Panel(): JSX.Element {
      * Player.steamID, Options.steamApiKey, Loading.playerActivityInit
      */
     useEffect(() => {
-        fetchSteamKillsDeaths();
+        addIspInformationToIdentifiers();
+        fetchUserStatsForGames();
         fetchSteamPlayerProfile();
         fetchSteamPlaytime();
     }, [Player.steamID, Options.steamApiKey, Loading.playerActivityInit]);
 
     /** Auto-refresh player activity */
     useEffect(() => {
-        console.log(
-            "Auto-refresh is now",
-            autoRefresh ? "enabled" : "disabled",
-        );
         if (autoRefresh) {
             const interval = setInterval(() => {
                 fetchPlayerActivity();

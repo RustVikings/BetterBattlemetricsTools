@@ -1,6 +1,7 @@
 import React, { JSX } from "react";
 import css from "../../styles.module.css";
 import classNames from "classnames";
+import Browser from "webextension-polyfill";
 
 interface DataPointProps extends React.HTMLAttributes<HTMLDivElement> {
     label: string;
@@ -10,7 +11,10 @@ interface DataPointProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: "default" | "inline";
     layout?: "vertical" | "horizontal";
     alignment?: "left" | "center" | "right";
+    href?: string;
 }
+
+const linkImg = Browser.runtime.getURL("./icons/link.svg");
 
 export function DataPoint({
     label,
@@ -19,6 +23,7 @@ export function DataPoint({
     severity,
     layout = "vertical",
     alignment = "left",
+    href,
 }: DataPointProps): JSX.Element {
     return (
         <div
@@ -48,7 +53,23 @@ export function DataPoint({
                 })}
                 title={title}
             >
-                {value}
+                {href ? (
+                    <a href={href} target="_blank" rel="noreferrer">
+                        {value}
+                        <img
+                            className="siz"
+                            src={linkImg}
+                            style={{
+                                display: "inline",
+                                width: "18px",
+                                height: "18px",
+                                marginLeft: "4px",
+                            }}
+                        />
+                    </a>
+                ) : (
+                    value
+                )}
             </div>
         </div>
     );

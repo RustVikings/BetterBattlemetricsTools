@@ -41,12 +41,19 @@ export function CurrentServer(): JSX.Element {
                     value={
                         Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
-                            : currentServer?.attributes.name || "Offline"
+                            : currentServer?.attributes.name ||
+                              "Player is offline"
                     }
                     title={
                         Loading.playerActivityInit && Loading.playerActivity
                             ? "Loading..."
-                            : currentServer?.attributes.name || "Offline"
+                            : currentServer?.attributes.name ||
+                              "Player is offline"
+                    }
+                    href={
+                        currentServer?.online
+                            ? `https://www.battlemetrics.com/rcon/servers/${currentServer?.attributes.id}`
+                            : undefined
                     }
                 />
                 <DataPoint
@@ -73,7 +80,7 @@ export function CurrentServer(): JSX.Element {
                     value={
                         Loading.playerActivity
                             ? "Loading..."
-                            : currentServer?.attributes.joined
+                            : currentServer?.online
                             ? `${moment(
                                   currentServer?.attributes.joined as Date,
                               ).fromNow()}`
@@ -82,10 +89,10 @@ export function CurrentServer(): JSX.Element {
                     title={
                         Loading.playerActivity
                             ? "Loading..."
-                            : currentServer?.attributes.joined
+                            : currentServer?.online
                             ? `${moment(
                                   currentServer?.attributes.joined as Date,
-                              ).fromNow()}`
+                              ).format("dddd, kk:mm:ss")}`
                             : "Unavailable"
                     }
                 />

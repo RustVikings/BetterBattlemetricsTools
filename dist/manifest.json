@@ -48,7 +48,8 @@
             "resources": [
                 "icons/copy.svg",
                 "icons/kill.svg",
-                "icons/death.svg"
+                "icons/death.svg",
+                "icons/link.svg"
             ],
             "matches": [
                 "*://www.battlemetrics.com/*",
