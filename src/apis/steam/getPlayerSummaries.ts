@@ -16,6 +16,9 @@ export async function getSteamPlayerSummaries(
     const response = await fetch(
         `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamApiKey}&steamids=${steamID}`,
     );
+    if (!response.ok) {
+        throw new Error(`Steam API error: ${response.status} ${response.statusText}`);
+    }
     const steamPlayer = await response.json();
 
     const Player: Player = {} as Player;

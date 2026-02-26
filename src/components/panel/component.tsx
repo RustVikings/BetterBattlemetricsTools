@@ -130,6 +130,7 @@ export function Panel(): JSX.Element {
     const [Player, setPlayer] = useState<Player>(defaultPlayer);
     const [Loading, setLoading] = useState<LoadingState>(defaultLoadingState);
     const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
+    const [missingKeys, setMissingKeys] = useState<boolean>(false);
 
     /** Fetch Options
      * Fetch the user's options from storage and update the state.
@@ -151,7 +152,10 @@ export function Panel(): JSX.Element {
                 !Options.ownServers
             ) {
                 setOptions(defaultOptions);
+                setMissingKeys(true);
+                Browser.runtime.openOptionsPage();
             } else {
+                setMissingKeys(false);
                 setOptions(Options);
             }
             setLoading((prevLoading) => ({
@@ -526,6 +530,20 @@ export function Panel(): JSX.Element {
             return;
         }
     }, [autoRefresh]);
+
+    if (missingKeys) {
+        return (
+            <div className={css.box}>
+                <p>API keys are not configured. Please open the extension settings to add your Battlemetrics and Steam API keys.</p>
+                <button
+                    type="button"
+                    onClick={() => Browser.runtime.openOptionsPage()}
+                >
+                    Open settings
+                </button>
+            </div>
+        );
+    }
 
     return (
         <AutoRefreshContext.Provider value={{ autoRefresh, setAutoRefresh }}>

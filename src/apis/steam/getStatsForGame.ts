@@ -13,7 +13,7 @@ export async function getUserStatsForGame(
     steamApiKey: string,
     steamID: string,
 ): Promise<unknown> {
-    const API_URL = `http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=${RUST_APP_ID}&key=${steamApiKey}&steamid=${steamID}`;
+    const API_URL = `https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/?appid=${RUST_APP_ID}&key=${steamApiKey}&steamid=${steamID}`;
 
     try {
         const response = await fetch(API_URL);

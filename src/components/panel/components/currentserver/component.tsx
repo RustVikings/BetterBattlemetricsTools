@@ -4,7 +4,7 @@ import { LoadingState, Player } from "@src/types";
 import { PlayerContext, LoadingContext } from "@src/components/panel/";
 import classNames from "classnames";
 import css from "../../styles.module.css";
-import moment from "moment";
+import { fromNow, formatDayTime } from "@src/utils/time";
 import React, { JSX, useContext } from "react";
 
 export function CurrentServer(): JSX.Element {
@@ -82,18 +82,16 @@ export function CurrentServer(): JSX.Element {
                         Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.online
-                            ? `${moment(
-                                  currentServer?.attributes.joined as Date,
-                              ).fromNow()}`
+                            ? fromNow(currentServer?.attributes.joined as Date)
                             : "Unavailable"
                     }
                     title={
                         Loading.playerActivity
                             ? "Loading..."
                             : currentServer?.online
-                            ? `${moment(
+                            ? formatDayTime(
                                   currentServer?.attributes.joined as Date,
-                              ).format("dddd, kk:mm:ss")}`
+                              )
                             : "Unavailable"
                     }
                 />

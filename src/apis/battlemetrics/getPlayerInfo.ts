@@ -28,6 +28,9 @@ export async function getPlayerInfo(
     const apiResponse = await fetch(
         `https://api.battlemetrics.com/players/${playerId}?include=server,identifier&fields[server]=name,ip,port&filter[identifiers]=steamID,ip&access_token=${battlemetricsApiToken}`,
     );
+    if (!apiResponse.ok) {
+        throw new Error(`Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`);
+    }
     const toJson = await apiResponse.json();
 
     const Player: Player = {} as Player;
@@ -81,11 +84,10 @@ export async function getPlayerInfo(
             Player.stats.playtime.battlemetrics += secondsToHours(
                 server.meta.timePlayed as number,
             );
-            /* check if the server is one of the user's servers */
-            const server_name = server.attributes.name.toLowerCase();
+            /* check if the server is one of the user's checked servers, matched by ID */
             if (
                 ownServers.some(
-                    (s) => s.server.name.toLowerCase() === server_name,
+                    (s) => s.checked !== false && s.server.id === server.id,
                 )
             ) {
                 /* add server played time to total yourservers playtime */
@@ -94,6 +96,7 @@ export async function getPlayerInfo(
                 );
             }
             /* infer aim playtime from server name and add to total aim playtime */
+            const server_name = server.attributes.name.toLowerCase();
             if (server_name.includes("aim") || server_name.includes("ukn")) {
                 Player.stats.playtime.aim += secondsToHours(
                     server.meta.timePlayed as number,

@@ -28,6 +28,9 @@ export async function getPlayerActivity(
     const apiResponse = await fetch(
         `https://api.battlemetrics.com/activity?tagTypeMode=and&filter[types][blacklist]=event:query&filter[players]=${playerId}&include=organization,user&page[size]=1000&access_token=${battlemetricsApiToken}`,
     );
+    if (!apiResponse.ok) {
+        throw new Error(`Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`);
+    }
     const responseData = await apiResponse.json();
 
     const Player: Player = {} as Player;

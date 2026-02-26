@@ -4,7 +4,7 @@ import { PlayerContext, LoadingContext, OptionsContext } from "../../component";
 import { Playtime } from "../playtime/component";
 import classNames from "classnames";
 import css from "../../styles.module.css";
-import moment from "moment";
+import { formatShortDate, formatLongDate, fromNow } from "@src/utils/time";
 import React, { JSX, useContext } from "react";
 
 export function PlayerInfo(): JSX.Element {
@@ -55,13 +55,9 @@ export function PlayerInfo(): JSX.Element {
                         Loading.steamProfile
                             ? "Loading..."
                             : steamProfile?.timecreated
-                            ? moment
-                                  .unix(steamProfile.timecreated)
-                                  .format("MMM DD, YYYY") +
+                            ? formatShortDate(steamProfile.timecreated * 1000) +
                               " (" +
-                              moment
-                                  .unix(steamProfile.timecreated)
-                                  .fromNow(true) +
+                              fromNow(steamProfile.timecreated * 1000, true) +
                               ")"
                             : "Unknown"
                     }
@@ -69,9 +65,7 @@ export function PlayerInfo(): JSX.Element {
                         Loading.steamProfile
                             ? "Loading..."
                             : steamProfile?.timecreated
-                            ? `Created: ${moment
-                                  .unix(steamProfile.timecreated)
-                                  .format("LLLL")}`
+                            ? `Created: ${formatLongDate(steamProfile.timecreated * 1000)}`
                             : "Steam profile is private: account age unavailable"
                     }
                 />
@@ -80,18 +74,17 @@ export function PlayerInfo(): JSX.Element {
                     value={
                         Loading.playerInfo
                             ? "Loading..."
-                            : moment(battlemetricsProfile?.createdAt).format(
-                                  "MMM DD, YYYY",
+                            : formatShortDate(
+                                  battlemetricsProfile?.createdAt as Date,
                               ) +
                               " (" +
-                              moment(battlemetricsProfile?.createdAt).fromNow(
+                              fromNow(
+                                  battlemetricsProfile?.createdAt as Date,
                                   true,
                               ) +
                               ")"
                     }
-                    title={`Joined: ${moment(
-                        battlemetricsProfile.createdAt as Date,
-                    ).format("LLLL")}`}
+                    title={`Joined: ${formatLongDate(battlemetricsProfile.createdAt as Date)}`}
                 />
             </div>
             <div>

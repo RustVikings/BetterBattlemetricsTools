@@ -20,7 +20,9 @@ export async function getSteamPlaytime(
     const apiResponse = await fetch(
         `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${steamApiKey}&steamid=${steamID}&format=json`,
     );
-
+    if (!apiResponse.ok) {
+        throw new Error(`Steam API error: ${apiResponse.status} ${apiResponse.statusText}`);
+    }
     const data = await apiResponse.json();
 
     const Player: Player = {} as Player;

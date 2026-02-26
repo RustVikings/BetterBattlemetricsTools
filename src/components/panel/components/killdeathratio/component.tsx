@@ -1,4 +1,4 @@
-import React, { JSX, use, useContext } from "react";
+import React, { JSX, useContext } from "react";
 import { Tag } from "../tag";
 import {
     Chart as ChartJS,
@@ -7,9 +7,6 @@ import {
     BarElement,
     Tooltip,
     Legend,
-    scales,
-    elements,
-    plugins,
     Color,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -19,12 +16,8 @@ ChartJS.register(
     CategoryScale,
     LinearScale,
     BarElement,
-    plugins,
     Tooltip,
     Legend,
-    ChartDataLabels,
-    scales,
-    elements,
     ChartDataLabels,
 );
 
@@ -36,7 +29,7 @@ import { LoadingContext, PlayerContext } from "@src/components/panel/";
 import { LoadingState, Player } from "@src/types";
 
 /* create icon elements */
-const icons = [new Image(12, 12), new Image(12, 12)];
+const icons = [new Image(16, 16), new Image(16, 16)];
 /* load kill/death icons */
 icons[0].src = Browser.runtime.getURL("icons/kill.svg");
 icons[1].src = Browser.runtime.getURL("icons/death.svg");
@@ -79,8 +72,7 @@ export const options = {
                 padding: 12,
                 textAlign: "center" as const,
                 usePointStyle: true,
-                pointStyle: "circle" as const,
-                pointStyleWidth: 20,
+                pointStyleWidth: 16,
                 borderRadius: 4,
             },
             onClick: (e: any): void => e.stopPropagation(),
@@ -140,6 +132,7 @@ export function KillDeathRatio({
                     topLeft: 4,
                     topRight: 4,
                 },
+                pointStyle: icons[0],
             },
             {
                 label: "Deaths",
@@ -155,6 +148,7 @@ export function KillDeathRatio({
                     topLeft: 4,
                     topRight: 4,
                 },
+                pointStyle: icons[1],
             },
         ],
     };

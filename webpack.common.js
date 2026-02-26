@@ -4,9 +4,9 @@ const path = require("path");
 
 module.exports = {
     entry: {
-        worker: (__dirname, "./src/worker.ts"),
-        options: (__dirname, "./src/options/index.tsx"),
-        main: (__dirname, "./src/index.tsx"),
+        worker: path.join(__dirname, "src/worker.ts"),
+        options: path.join(__dirname, "src/options/index.tsx"),
+        main: path.join(__dirname, "src/index.tsx"),
     },
     output: {
         path: path.resolve(__dirname, "dist"),
