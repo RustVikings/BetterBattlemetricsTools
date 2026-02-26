@@ -1,32 +1,33 @@
 name: Build
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
 
-      - name: Build extension
-        run: yarn webpack --config webpack.prod.js
+            - name: Build extension
+              run: yarn webpack --config webpack.prod.js
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: extension-${{ github.sha }}
-          path: dist/
-          retention-days: 7
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: extension-${{ github.sha }}
+                  path: dist/
+                  retention-days: 7
