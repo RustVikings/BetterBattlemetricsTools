@@ -37,7 +37,7 @@ export function Options(): JSX.Element {
         async function fetchOptions() {
             try {
                 const Options = (await Browser.storage.local.get()) as Options;
-                // console.log("loading options from local storage", Options);
+                console.log("loading options from local storage", Options);
                 if (Options !== null && Options !== undefined) {
                     if (
                         !Options.battlemetricsApiToken ||

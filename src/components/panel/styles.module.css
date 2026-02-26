@@ -222,4 +222,12 @@
             @apply text-xs;
         }
     } */
+
+    button.serverAddressCopyButton {
+        @apply bg-transparent;
+        @apply border-0;
+        @apply hover:opacity-70;
+        @apply ml-2;
+        @apply p-0;
+    }
 }

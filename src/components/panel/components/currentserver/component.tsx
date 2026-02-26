@@ -74,6 +74,7 @@ export function CurrentServer(): JSX.Element {
                             ? `${currentServer?.attributes.ip}:${currentServer?.attributes.port}`
                             : "Unavailable"
                     }
+                    copy={currentServer?.online ? true : false}
                 />
                 <DataPoint
                     label="Join time"
