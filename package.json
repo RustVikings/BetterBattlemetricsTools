@@ -1,6 +1,6 @@
 {
     "name": "better-battlemetrics-tools",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "This extension changes the layout of the \"Player profile\" page and enhances the presented information.",
     "main": "index.js",
     "scripts": {
