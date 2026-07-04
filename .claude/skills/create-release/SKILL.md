@@ -56,10 +56,10 @@ Confirm the archive was created and lists the extension files at the root:
 
 ## 4. Commit, tag, and push
 
-Stage the version bumps and the release zip, commit, create an annotated tag, and push both the commit and the tag:
+Stage the version bumps, commit, create an annotated tag, and push both the commit and the tag. **Do not commit the zip** — `.gitignore` ignores `*.zip`; the archive is distributed as the GitHub Release asset only (step 5), not tracked in the repo:
 
 ```bash
-git add package.json src/manifest.json releases/better-battlemetrics-tools-v<new-version>.zip
+git add package.json src/manifest.json
 git commit -m "Release v<new-version>"
 git tag -a "v<new-version>" -m "Release v<new-version>"
 git push origin main
@@ -74,6 +74,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
 
 ## 5. Publish the GitHub Release
 
+The zip is **not** in git — it ships here, as the Release asset:
+
 ```bash
 gh release create "v<new-version>" \
   releases/better-battlemetrics-tools-v<new-version>.zip \
@@ -81,7 +83,7 @@ gh release create "v<new-version>" \
   --generate-notes
 ```
 
-`--generate-notes` auto-builds release notes from merged PRs/commits since the last tag. If `gh` is not authenticated (`gh auth status` fails), stop after the push and tell the user the tag and zip are ready but they need to authenticate `gh` (or create the Release in the GitHub UI) to publish.
+`--generate-notes` auto-builds release notes from merged PRs/commits since the last tag. If `gh` is not authenticated (`gh auth status` fails, e.g. a stale/invalid `GH_TOKEN` giving `401 Bad credentials`), stop after the push and tell the user the tag is pushed and the zip is ready at `releases/…`, but they need to authenticate `gh` (or upload the zip via the GitHub Releases UI) to publish. The command can be re-run once auth is fixed.
 
 ## 6. Report
 
