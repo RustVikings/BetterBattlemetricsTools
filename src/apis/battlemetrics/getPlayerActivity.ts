@@ -29,7 +29,9 @@ export async function getPlayerActivity(
         `https://api.battlemetrics.com/activity?tagTypeMode=and&filter[types][blacklist]=event:query&filter[players]=${playerId}&include=organization,user&page[size]=1000&access_token=${battlemetricsApiToken}`,
     );
     if (!apiResponse.ok) {
-        throw new Error(`Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`);
+        throw new Error(
+            `Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`,
+        );
     }
     const responseData = await apiResponse.json();
 
@@ -73,6 +75,39 @@ export async function getPlayerActivity(
     /* Convert playerId to string */
     const player_id_num = parseInt(playerId);
 
+    /* Daily-bucketed timeline for the trailing TIMELINE_DAYS, oldest → newest,
+     * used to render recent-trend sparklines. Events outside the window still
+     * count toward totals above, they just aren't bucketed here. */
+    const TIMELINE_DAYS = 14;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const timeline = {
+        days: [] as string[],
+        kills: new Array(TIMELINE_DAYS).fill(0),
+        deaths: new Array(TIMELINE_DAYS).fill(0),
+        cheatReports: new Array(TIMELINE_DAYS).fill(0),
+        arkan: new Array(TIMELINE_DAYS).fill(0),
+        guardian: new Array(TIMELINE_DAYS).fill(0),
+    };
+    for (let i = TIMELINE_DAYS - 1; i >= 0; i--) {
+        const day = new Date(startOfToday);
+        day.setDate(day.getDate() - i);
+        timeline.days.push(day.toISOString().slice(0, 10));
+    }
+
+    /** Bucket index for a timestamp, or -1 if outside the window. */
+    const bucketIndex = (timestamp: string): number => {
+        const day = new Date(timestamp);
+        day.setHours(0, 0, 0, 0);
+        const daysAgo = Math.round(
+            (startOfToday.getTime() - day.getTime()) / 86_400_000,
+        );
+        return daysAgo >= 0 && daysAgo < TIMELINE_DAYS
+            ? TIMELINE_DAYS - 1 - daysAgo
+            : -1;
+    };
+
     for (const activity of responseData.data) {
         const messageType = activity.attributes
             .messageType as BattlemetricsMessageTypes;
@@ -82,12 +117,15 @@ export async function getPlayerActivity(
             activity.attributes.data.reportType = reportType;
             /* Increment report stats based on report type */
             switch (reportType) {
-                case "cheat":
+                case "cheat": {
                     stats.reports.cheat++;
                     if (isWithin24hours(activity.attributes.timestamp)) {
                         stats.reports.cheat_24h++;
                     }
+                    const idx = bucketIndex(activity.attributes.timestamp);
+                    if (idx >= 0) timeline.cheatReports[idx]++;
                     break;
+                }
                 case "teaming":
                     stats.reports.teaming++;
                     if (isWithin24hours(activity.attributes.timestamp)) {
@@ -123,6 +161,14 @@ export async function getPlayerActivity(
                 default:
                     stats.kd.deaths++;
             }
+            const idx = bucketIndex(activity.attributes.timestamp);
+            if (idx >= 0) {
+                if (activity.attributes.data.killer_id === player_id_num) {
+                    timeline.kills[idx]++;
+                } else {
+                    timeline.deaths[idx]++;
+                }
+            }
         } else if (messageType === "unknown") {
             if (arkanWarnings) {
                 const message = activity.attributes
@@ -134,6 +180,8 @@ export async function getPlayerActivity(
                         stats.anticheat.arkan.no_recoil_24h++;
                     }
                     stats.anticheat.arkan.no_recoil++;
+                    const idx = bucketIndex(activity.attributes.timestamp);
+                    if (idx >= 0) timeline.arkan[idx]++;
                 } else if (
                     message.startsWith("[Arkan] AIMBOT probable violation")
                 ) {
@@ -141,6 +189,8 @@ export async function getPlayerActivity(
                         stats.anticheat.arkan.aimbot_24h++;
                     }
                     stats.anticheat.arkan.aimbot++;
+                    const idx = bucketIndex(activity.attributes.timestamp);
+                    if (idx >= 0) timeline.arkan[idx]++;
                 }
             }
             if (guardianWarnings) {
@@ -151,6 +201,8 @@ export async function getPlayerActivity(
                         stats.anticheat.guardian.cheat_24h++;
                     }
                     stats.anticheat.guardian.cheat++;
+                    const idx = bucketIndex(activity.attributes.timestamp);
+                    if (idx >= 0) timeline.guardian[idx]++;
                 } else if (message.includes(" for AntiFlood")) {
                     if (isWithin24hours(activity.attributes.timestamp)) {
                         stats.anticheat.guardian.antiflood_24h++;
@@ -160,6 +212,8 @@ export async function getPlayerActivity(
             }
         }
     }
+
+    Player.timeline = timeline;
 
     return {
         player: Player,

@@ -9,26 +9,25 @@ import { TextInput } from "./components/textinput";
 import { Switch } from "./components/switch";
 import { Servers } from "./components/servers";
 import { Spinner } from "./components/spinner";
+import { RiskWeights } from "./components/riskweights";
 import css from "./styles.module.css";
 import Browser = require("webextension-polyfill");
 import { getServers } from "../../messaging/battlemetrics/getServers";
-import { getOptions } from "../../messaging/internal/getOptions";
 import version from "../../manifest.json";
 import { Options, OwnServer } from "@src/types";
+import { DEFAULT_RISK_CONFIG, resolveRiskConfig } from "@src/utils/risk";
 
 export function Options(): JSX.Element {
     const defaultOptions: Options = {
         arkan: true,
         battlemetricsApiToken: "",
         guardian: true,
-        rustAdmin: true,
-        rustStats: true,
-        serverArmour: true,
         steamApiKey: "",
         saveEnabled: false,
         ownServers: [],
         saveButtonText: "Save options",
         refreshingServers: false,
+        riskConfig: DEFAULT_RISK_CONFIG,
     };
 
     const [formData, setFormData] = useState<Options>(defaultOptions);
@@ -37,7 +36,6 @@ export function Options(): JSX.Element {
         async function fetchOptions() {
             try {
                 const Options = (await Browser.storage.local.get()) as Options;
-                console.log("loading options from local storage", Options);
                 if (Options !== null && Options !== undefined) {
                     if (
                         !Options.battlemetricsApiToken ||
@@ -185,6 +183,35 @@ export function Options(): JSX.Element {
         }));
     };
 
+    const handleRiskConfigChange = (
+        section: "weights" | "thresholds",
+        key: string,
+        value: number,
+    ) => {
+        setFormData((prevState) => {
+            const current = resolveRiskConfig(prevState.riskConfig);
+            return {
+                ...prevState,
+                riskConfig: {
+                    ...current,
+                    [section]: {
+                        ...current[section],
+                        [key]: value,
+                    },
+                },
+                saveButtonText: "Save options",
+            };
+        });
+    };
+
+    const handleRiskConfigReset = () => {
+        setFormData((prevState) => ({
+            ...prevState,
+            riskConfig: DEFAULT_RISK_CONFIG,
+            saveButtonText: "Save options",
+        }));
+    };
+
     const handleSave = () => {
         const options = { ...formData };
         Browser.storage.local
@@ -212,7 +239,7 @@ export function Options(): JSX.Element {
             if (response.servers) {
                 const newState = { ...formData };
                 const ownServers: OwnServer[] = [];
-                for (const [key, value] of Object.entries(servers)) {
+                for (const value of Object.values(servers)) {
                     ownServers.push({
                         checked: true,
                         server: {
@@ -285,7 +312,7 @@ export function Options(): JSX.Element {
                     />
                 </fieldset>
                 <fieldset>
-                    <legend>Links</legend>
+                    <legend>Anticheat plugins</legend>
                     <Switch
                         showLink={true}
                         name="arkan"
@@ -302,29 +329,15 @@ export function Options(): JSX.Element {
                         href="https://umod.org/plugins/guardian"
                         checked={formData.guardian}
                     />
-                    <Switch
-                        showLink={true}
-                        name="rustAdmin"
-                        label="RustAdmin shared bans"
-                        onChange={handleOnChange}
-                        href="https://www.rustadmin.com/"
-                        checked={formData.rustAdmin}
-                    />
-                    <Switch
-                        showLink={true}
-                        name="serverArmour"
-                        label="Server Armour"
-                        onChange={handleOnChange}
-                        href="https://serverarmour.com/home"
-                        checked={formData.serverArmour}
-                    />
-                    <Switch
-                        showLink={true}
-                        name="rustStats"
-                        label="ruststats.io"
-                        onChange={handleOnChange}
-                        href="https://ruststats.io/"
-                        checked={formData.rustStats}
+                </fieldset>
+                <fieldset>
+                    <legend>Risk scoring</legend>
+                    <RiskWeights
+                        config={resolveRiskConfig(formData.riskConfig)}
+                        arkanEnabled={formData.arkan ?? false}
+                        guardianEnabled={formData.guardian ?? false}
+                        onChange={handleRiskConfigChange}
+                        onReset={handleRiskConfigReset}
                     />
                 </fieldset>
                 {/* render server list when available */}

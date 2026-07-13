@@ -1,4 +1,4 @@
-import React, { JSX, InputHTMLAttributes } from "react";
+import React, { InputHTMLAttributes } from "react";
 import classNames from "classnames";
 import css from "../../styles.module.css";
 

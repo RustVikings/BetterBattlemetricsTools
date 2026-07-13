@@ -27,8 +27,14 @@ export function PlayerInfo(): JSX.Element {
         }
     };
 
+    /* Columns: profiles + reports + playtime (2-wide) = 4 base, plus one each
+     * for the Arkan and Guardian sections when enabled. */
+    const columns = 4 + (Options.arkan ? 1 : 0) + (Options.guardian ? 1 : 0);
+    const columnClass =
+        columns === 6 ? css.cols_6 : columns === 5 ? css.cols_5 : css.cols_4;
+
     return (
-        <div className={classNames(css.section, css.cols_6)}>
+        <div className={classNames(css.section, columnClass)}>
             <div>
                 {/* Steam and Battlemetrics profiles age and status */}
                 <DataPoint
@@ -65,7 +71,9 @@ export function PlayerInfo(): JSX.Element {
                         Loading.steamProfile
                             ? "Loading..."
                             : steamProfile?.timecreated
-                            ? `Created: ${formatLongDate(steamProfile.timecreated * 1000)}`
+                            ? `Created: ${formatLongDate(
+                                  steamProfile.timecreated * 1000,
+                              )}`
                             : "Steam profile is private: account age unavailable"
                     }
                 />
@@ -84,7 +92,9 @@ export function PlayerInfo(): JSX.Element {
                               ) +
                               ")"
                     }
-                    title={`Joined: ${formatLongDate(battlemetricsProfile.createdAt as Date)}`}
+                    title={`Joined: ${formatLongDate(
+                        battlemetricsProfile.createdAt as Date,
+                    )}`}
                 />
             </div>
             <div>

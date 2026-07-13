@@ -1,4 +1,5 @@
 import {
+    ActivityTimeline,
     BattlemetricsPlayerProfile,
     BattlemetricsPlayerStats,
     BattlemetricsCurrentServer,
@@ -24,6 +25,7 @@ export type Player = {
     stats: BattlemetricsPlayerStats;
     current_server: BattlemetricsCurrentServer;
     ips: BattlemetricsPlayerIPs[];
+    timeline?: ActivityTimeline;
 };
 
 /**
@@ -52,6 +54,7 @@ export type AutoreRefreshType = {
  * Export all types from this module
  */
 export {
+    ActivityTimeline,
     BattlemetricsAnticheatStats,
     BattlemetricsArkanMessageTypes,
     BattlemetricsArkanWarning,

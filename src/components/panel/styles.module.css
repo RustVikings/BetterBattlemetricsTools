@@ -167,6 +167,110 @@
         }
     }
 
+    .risk_badge_wrap {
+        @apply inline-flex items-center align-middle;
+        margin-left: 8px;
+        .risk_badge {
+            @apply inline-block rounded-full font-bold text-white uppercase;
+            font-size: 11px;
+            line-height: 11px;
+            padding: 3px 8px;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 0;
+            appearance: none;
+            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
+            &.severity_red {
+                background-color: var(--bbt-red);
+            }
+            &.severity_amber {
+                background-color: var(--bbt-amber);
+            }
+            &.severity_green {
+                background-color: var(--bbt-green);
+            }
+            &.severity_unknown {
+                background-color: var(--bbt-unknown);
+            }
+        }
+    }
+
+    .sparkline_row {
+        @apply flex flex-col;
+        gap: 2px;
+        margin-top: 10px;
+    }
+    .sparkline {
+        @apply block;
+    }
+
+    .risk_popover {
+        position: fixed;
+        inset: auto;
+        margin: 0;
+        max-width: 320px;
+        min-width: 224px;
+        padding: 12px 14px;
+        border: 1px solid var(--bbt-divider);
+        border-radius: 8px;
+        background-color: var(--bbt-widget-bg);
+        color: #fff;
+        font-family: "Open Sans", sans-serif;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+
+        .risk_popover_header {
+            @apply mb-2;
+        }
+        .risk_popover_note {
+            font-size: 11px;
+            color: var(--bbt-label);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .risk_popover_empty {
+            font-size: 12px;
+            color: var(--bbt-green);
+        }
+        .risk_factors {
+            @apply flex flex-col;
+            gap: 4px;
+            font-size: 12px;
+            li {
+                @apply flex items-center justify-between;
+                gap: 16px;
+            }
+        }
+        .risk_factor_points {
+            color: var(--bbt-amber);
+            font-weight: 700;
+        }
+        .risk_deltas {
+            @apply flex flex-col;
+            gap: 4px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--bbt-divider);
+        }
+        .risk_deltas_title {
+            font-size: 11px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--bbt-label);
+        }
+        .risk_deltas_none {
+            font-size: 12px;
+            color: var(--bbt-label);
+        }
+        .delta_up {
+            color: var(--bbt-red);
+            font-weight: 700;
+        }
+        .delta_down {
+            color: var(--bbt-green);
+            font-weight: 700;
+        }
+    }
+
     .player_banner {
         @apply flex items-center justify-between;
         .player_id {

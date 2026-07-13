@@ -1,3 +1,17 @@
+### v1.0.3 — 2026-07-13
+
+-   **New: Risk badge** — an at-a-glance **Low / Medium / High** risk indicator on the player-profile panel, with a breakdown popover.
+-   **New: configurable risk weights** in the options page, so you can tune what drives the score.
+-   **New: identifier enrichment and visit-history signals** feeding the risk assessment.
+-   Refinements to the player panel, banner and options UI.
+-   Cleanup: removed leftover debug `console.log`s; catch-block failures now log via `console.error`. Fixed the stale repository URL in `package.json`.
+
+> Note: activity sparklines were held back from this release (still in development).
+
+---
+
+<!-- The entry below is upstream extension-template boilerplate, not app history. -->
+
 ### v2.0.0
 
 -   Bump `version` field in `package.json` to `2.0.0`

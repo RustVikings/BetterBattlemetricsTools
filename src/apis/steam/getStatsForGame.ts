@@ -35,7 +35,6 @@ export async function getUserStatsForGame(
             } as BattlemetricsPlayerStats;
 
             if (!stats || stats.length === 0) {
-                console.log("No Rust game data found for this SteamID.");
                 Player.stats.kd.kills = 0;
                 Player.stats.kd.deaths = 0;
             } else {
@@ -56,7 +55,6 @@ export async function getUserStatsForGame(
                     getStats("death_bear");
             }
 
-            console.log("Steam Kills/Deaths Data:", Player);
 
             return {
                 player: Player,

@@ -29,7 +29,9 @@ export async function getPlayerInfo(
         `https://api.battlemetrics.com/players/${playerId}?include=server,identifier&fields[server]=name,ip,port&filter[identifiers]=steamID,ip&access_token=${battlemetricsApiToken}`,
     );
     if (!apiResponse.ok) {
-        throw new Error(`Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`);
+        throw new Error(
+            `Battlemetrics API error: ${apiResponse.status} ${apiResponse.statusText}`,
+        );
     }
     const toJson = await apiResponse.json();
 

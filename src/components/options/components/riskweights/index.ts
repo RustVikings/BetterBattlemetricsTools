@@ -1,0 +1,1 @@
+export { RiskWeights } from "./component";

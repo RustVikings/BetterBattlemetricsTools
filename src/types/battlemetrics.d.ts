@@ -99,6 +99,21 @@ export interface BattlemetricsPlayerStats {
     servers_played: number;
 }
 
+/**
+ * Daily-bucketed activity series derived from the player's activity feed, used
+ * to render recent-trend sparklines. Arrays share the same length/order as
+ * `days` (oldest → newest).
+ */
+export interface ActivityTimeline {
+    /** ISO day labels (YYYY-MM-DD), oldest → newest. */
+    days: string[];
+    kills: number[];
+    deaths: number[];
+    cheatReports: number[];
+    arkan: number[];
+    guardian: number[];
+}
+
 /** Types for Arkan message categories */
 export type BattlemetricsArkanMessageTypes =
     | "[Arkan] No Recoil probable violation"

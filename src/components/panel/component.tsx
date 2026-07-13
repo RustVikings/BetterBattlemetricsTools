@@ -19,9 +19,12 @@ import { PlayerBanner } from "./components/playerbanner/";
 import { PlayerInfo } from "./components/playerinfo/component";
 import Browser from "webextension-polyfill";
 import css from "./styles.module.css";
-import React, { JSX, createContext, useState, useEffect } from "react";
+import React, { JSX, createContext, useRef, useState, useEffect } from "react";
 import { REFRESH_PLAYER_ACTIVITY_INTERVAL_MS } from "@src/config/";
-import waitForElement from "@src/utils/dom";
+import {
+    registerIdentifierEnrichment,
+    refreshIdentifierEnrichment,
+} from "@src/utils/enrichIdentifiers";
 
 export const PlayerContext = createContext<Player | null>(null);
 export const LoadingContext = createContext<LoadingState | null>(null);
@@ -29,10 +32,10 @@ export const OptionsContext = createContext<Options | undefined>(undefined);
 
 export const AutoRefreshContext = createContext<AutoreRefreshType>({
     autoRefresh: false,
-    setAutoRefresh: () => {},
+    setAutoRefresh: () => {
+        /* no-op default */
+    },
 });
-
-let identifiers: NodeListOf<Element>;
 
 export function Panel(): JSX.Element {
     // Get the player ID from the URL
@@ -131,6 +134,11 @@ export function Panel(): JSX.Element {
     const [Loading, setLoading] = useState<LoadingState>(defaultLoadingState);
     const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
     const [missingKeys, setMissingKeys] = useState<boolean>(false);
+
+    /* Always-current Player, so the persistent identifier-enrichment observer
+     * (installed once) reads the latest Player.ips without a stale closure. */
+    const playerRef = useRef<Player>(Player);
+    playerRef.current = Player;
 
     /** Fetch Options
      * Fetch the user's options from storage and update the state.
@@ -234,25 +242,24 @@ export function Panel(): JSX.Element {
         }
     }
 
-    // console.log("Panel: Rendering with Player:", Player);
+    // console.error("Panel: Rendering with Player:", Player);
 
     /** Fetch Player Activity
      *
      * @param Options.battlemetricsApiToken - The Battlemetrics API token
      * @param Player.id - The player's Battlemetrics ID
-     * @param Options.arkan - Whether to fetch Arkan warnings
-     * @param Options.guardian - Whether to fetch Guardian warnings
+     * @param Options.arkan - Whether to parse Arkan warnings from the activity
+     * @param Options.guardian - Whether to parse Guardian warnings from the activity
      *
      * Uses the getPlayerActivity messaging function to fetch the player's
      * activity from the Battlemetrics API. Updates the Player state with the fetched data.
+     *
+     * The fetch runs whenever a player and token are available; the Arkan and
+     * Guardian toggles only control whether those warning types are parsed out
+     * of the activity (reports and 24h K/D are always computed).
      */
     async function fetchPlayerActivity() {
-        if (
-            Player.id &&
-            Options.battlemetricsApiToken &&
-            Options.arkan &&
-            Options.guardian
-        ) {
+        if (Player.id && Options.battlemetricsApiToken) {
             try {
                 setLoading((prevLoading) => ({
                     ...prevLoading,
@@ -262,8 +269,8 @@ export function Panel(): JSX.Element {
                 const response = await getPlayerActivity({
                     battlemetricsApiToken: Options.battlemetricsApiToken,
                     playerId: Player.id,
-                    arkanWarnings: Options.arkan,
-                    guardianWarnings: Options.guardian,
+                    arkanWarnings: Options.arkan ?? false,
+                    guardianWarnings: Options.guardian ?? false,
                 });
 
                 if (response.Player) {
@@ -286,6 +293,7 @@ export function Panel(): JSX.Element {
                                 ...player.stats.anticheat,
                             },
                         },
+                        timeline: player.timeline,
                     }));
                     setLoading((prevLoading) => ({
                         ...prevLoading,
@@ -304,7 +312,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.log("Panel: fetchPlayerActivity error", e);
+                console.error("Panel: fetchPlayerActivity error", e);
             }
         }
     }
@@ -352,7 +360,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.log("Panel: fetchSteamProfile error", e);
+                console.error("Panel: fetchSteamProfile error", e);
             }
         }
     }
@@ -400,40 +408,9 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.log("Panel: fetchSteamPlaytime error", e);
+                console.error("Panel: fetchSteamPlaytime error", e);
             }
         }
-    }
-
-    /**
-     * Add ISP Information to Identifiers
-     *
-     * Uses the Player.ips data to add ISP and ASN information to the
-     * identifiers displayed on the Battlemetrics player page.
-     */
-    async function addIspInformationToIdentifiers() {
-        waitForElement("td[data-title=Identifier]", () => {
-            identifiers = document.querySelectorAll(
-                "td[data-title=Identifier] + td[data-title=Type]",
-            );
-            identifiers.forEach((identifier) => {
-                if (identifier.textContent.includes("IP")) {
-                    const matchedIP =
-                        identifier.previousSibling?.textContent?.match(
-                            /(\d{1,3}\.){3}\d{1,3}/,
-                        )?.[0];
-                    const el = identifier.previousSibling as HTMLElement;
-                    const ipEl = el.querySelector(".css-q39y9k");
-                    if (matchedIP) {
-                        const ip = Player.ips.find((ip) => ip.ip === matchedIP);
-                        if (ip) {
-                            if (ipEl)
-                                ipEl.innerHTML = `${ip.ip}<br/><span class="small">ISP: <a href="https://www.google.com/search?q=${ip.metadata.connectionInfo.isp}" title="Search: ${ip.metadata.connectionInfo.isp} " target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.isp}</a>  | ASN: <a href="https://ipinfo.io/${ip.metadata.connectionInfo.asn}" title="Search: ${ip.metadata.connectionInfo.asn}" target="_blank" rel="noopener noreferrer">${ip.metadata.connectionInfo.asn}</a></span>`;
-                        }
-                    }
-                }
-            });
-        });
     }
 
     /**
@@ -487,7 +464,7 @@ export function Panel(): JSX.Element {
                     }));
                 }
             } catch (e) {
-                console.log("Panel: fetchSteamKillsDeaths error", e);
+                console.error("Panel: fetchSteamKillsDeaths error", e);
             }
         }
     }
@@ -513,11 +490,25 @@ export function Panel(): JSX.Element {
      * Player.steamID, Options.steamApiKey, Loading.playerActivityInit
      */
     useEffect(() => {
-        addIspInformationToIdentifiers();
         fetchUserStatsForGames();
         fetchSteamPlayerProfile();
         fetchSteamPlaytime();
     }, [Player.steamID, Options.steamApiKey, Loading.playerActivityInit]);
+
+    /**
+     * Register the panel's known IPs with the shared identifier enricher, which
+     * keeps identifier tables enriched across BattleMetrics' SPA tab navigation
+     * via a single <body> observer. Reads live Player.ips through playerRef so
+     * it is not affected by stale closures.
+     */
+    useEffect(() => {
+        return registerIdentifierEnrichment(() => playerRef.current.ips);
+    }, []);
+
+    /** Re-run enrichment once the known IP set (Player.ips) arrives or changes. */
+    useEffect(() => {
+        refreshIdentifierEnrichment();
+    }, [Player.ips]);
 
     /** Auto-refresh player activity */
     useEffect(() => {
@@ -534,7 +525,10 @@ export function Panel(): JSX.Element {
     if (missingKeys) {
         return (
             <div className={css.box}>
-                <p>API keys are not configured. Please open the extension settings to add your Battlemetrics and Steam API keys.</p>
+                <p>
+                    API keys are not configured. Please open the extension
+                    settings to add your Battlemetrics and Steam API keys.
+                </p>
                 <button
                     type="button"
                     onClick={() => Browser.runtime.openOptionsPage()}

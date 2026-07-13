@@ -41,7 +41,6 @@ Browser.runtime.onInstalled.addListener(() => {
 Browser.webNavigation.onHistoryStateUpdated.addListener((details) => {
     /* Only act on the main frame */
     if (details.frameId === 0) {
-        console.log("History state updated, sending message:", details.tabId);
         Browser.tabs.sendMessage(details.tabId, {
             action: "render-player-panel",
             details,

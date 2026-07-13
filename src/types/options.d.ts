@@ -1,3 +1,5 @@
+import type { RiskConfig } from "@src/utils/risk";
+
 /**
  * Types for Own Servers configuration
  */
@@ -23,11 +25,9 @@ export type Options = {
     guardian?: boolean;
     ownServers: OwnServer[];
     refreshingServers?: boolean;
-    rustAdmin?: boolean;
-    rustStats?: boolean;
+    riskConfig?: Partial<RiskConfig>;
     saveButtonText?: string;
     saveEnabled?: boolean;
-    serverArmour?: boolean;
     steamApiKey: string;
     steamApiKeyIsValid?: boolean;
 };

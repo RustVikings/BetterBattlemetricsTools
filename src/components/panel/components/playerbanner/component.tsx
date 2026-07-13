@@ -1,9 +1,10 @@
-import React, { ChangeEvent, JSX, ReactEventHandler, useContext } from "react";
+import React, { ChangeEvent, JSX, useContext } from "react";
 import css from "../../styles.module.css";
 import classNames from "classnames";
 import { PlayerContext, LoadingContext } from "@src/components/panel/";
 import { Player, LoadingState } from "@src/types";
 import { AutoRefreshContext } from "../../component";
+import { RiskBadge } from "../riskbadge";
 
 export function PlayerBanner(): JSX.Element {
     const Player = useContext(PlayerContext) as Player;
@@ -31,6 +32,7 @@ export function PlayerBanner(): JSX.Element {
                         {Loading.steamProfile
                             ? "Loading..."
                             : steamProfile?.personaname || "Unknown Player"}
+                        <RiskBadge />
                     </div>
                     <div className={css.player_steam_profile_url}>
                         <a
