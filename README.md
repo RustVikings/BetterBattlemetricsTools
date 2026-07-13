@@ -2,6 +2,8 @@
 
 ![Example Extension Popup](https://i.imgur.com/Jk7Dp08.png "Example Extension look")
 
+> **Focused on Rust.** The enhancements — Steam playtime & K/D, Arkan / Guardian anti-cheat signals, and the risk scoring built on them — are tailored to Rust servers.
+
 **Getting Started**
 
 Run the following commands to install dependencies and start developing
